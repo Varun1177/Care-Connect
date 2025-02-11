@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class AddAdminScreen extends StatelessWidget {
+  AddAdminScreen({super.key});
+
   final TextEditingController emailController = TextEditingController();
 
   void addAdmin() async {
@@ -24,11 +26,11 @@ class AddAdminScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Add Admin")),
+      appBar: AppBar(title: const Text("Add Admin")),
       body: Column(
         children: [
-          TextField(controller: emailController, decoration: InputDecoration(labelText: "Email")),
-          ElevatedButton(onPressed: addAdmin, child: Text("Make Admin"))
+          TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email")),
+          ElevatedButton(onPressed: addAdmin, child: const Text("Make Admin"))
         ],
       ),
     );
