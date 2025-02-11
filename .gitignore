@@ -1,0 +1,65 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+.idea/
+.vscode/
+*.iml
+
+# Firebase related
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# Miscellaneous
+*.log
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+*.lock
+
+# Web related
+web/.dart_tool/
+web/build/
+
+# macOS related
+macos/Flutter/Flutter.framework
+macos/Flutter/Flutter.podspec
+
+# Windows related
+windows/Flutter/ephemeral/
+
+# Linux related
+linux/Flutter/ephemeral/
+
+# IntelliJ related
+*.ipr
+*.iws
+.idea/
+
+# Android Studio related
+*.keystore
+
+# Environment variable files
+.env
+
+# Crashlytics related
+crashlytics-build.properties
+
+# Symbol files
+*.symbols
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Generated Plugin Registrant
+**/GeneratedPluginRegistrant.*
