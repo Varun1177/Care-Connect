@@ -1,24 +1,28 @@
-import 'package:care__connect/screens/user_dashboard.dart';
+import 'package:care__connect/screens/splash_screen.dart';
+import 'package:care__connect/screens/User/user_dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dashboard_screen.dart';
-import 'signup_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget{
+  const LoginScreen({super.key});
+  @override
+  _loginScreenState createState() => _loginScreenState();
+}
+class _loginScreenState extends State<LoginScreen>{
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-
-  LoginScreen({super.key});
+  bool _obscureText = true;
 
   Future<void> _signInWithGoogle(BuildContext context) async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        return; // User canceled the sign-in
+        return;
       }
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
@@ -54,7 +58,7 @@ class LoginScreen extends StatelessWidget {
         password: _passwordController.text.trim(),
       );
 
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -62,7 +66,7 @@ class LoginScreen extends StatelessWidget {
         ),
       );
     } catch (e) {
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login Failed: ${e.toString()}')),
       );
@@ -88,7 +92,7 @@ class LoginScreen extends StatelessWidget {
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
-                  child: Image.asset('lib/assets/image1.png', height: 350),
+                  child: Image.asset('lib/assets/globe.png', height: 350),
                 ),
               ),
             ),
@@ -97,13 +101,13 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
+                  const Center(
                     child: Text(
                       'Login to your account',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF212121),
+                        color: Color(0xFF212121),
                       ),
                     ),
                   ),
@@ -118,8 +122,20 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   TextField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: _obscureText,
                     decoration: InputDecoration(
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureText
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureText = !_obscureText;
+                          });
+                        },
+                      ),
                       labelText: 'Password',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     ),
@@ -165,7 +181,7 @@ class LoginScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const SignupScreen(role:"user")),
+                            MaterialPageRoute(builder: (context) => const SplashScreen()),
                           );
                         },
                         child: const Text(
