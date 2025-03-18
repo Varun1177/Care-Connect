@@ -3,6 +3,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:care__connect/screens/login_screen.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'ngo_dashboard.dart';
 
 class NGORegistrationScreen extends StatefulWidget {
   const NGORegistrationScreen({super.key});
@@ -73,9 +76,64 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> {
     }
   }
 
-  void registerNGO() {
-    // Registration logic here
-    print("NGO Registered Successfully!");
+  void registerNGO() async {
+    if (_document == null || _logo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please upload both logo and document")),
+      );
+      return;
+    }
+
+    try {
+      String ngoId =
+          FirebaseFirestore.instance.collection('pending_approvals').doc().id;
+
+      // Upload Logo
+      String logoPath = 'ngos/$ngoId/logo.jpg';
+      String logoUrl = await uploadFile(_logo!, logoPath);
+
+      // Upload Document
+      String docPath = 'ngos/$ngoId/document.pdf';
+      String docUrl = await uploadFile(_document!, docPath);
+
+      // Save in Firestore (pending approval)
+      await FirebaseFirestore.instance
+          .collection('pending_approvals')
+          .doc(ngoId)
+          .set({
+        'ngoId': ngoId,
+        'name': ngoNameController.text,
+        'email': emailController.text,
+        'sector': selectedSector,
+        'description': descriptionController.text,
+        'personName': personNameController.text,
+        'personRole': personRoleController.text,
+        'logoUrl': logoUrl,
+        'documentUrl': docUrl,
+        'submittedAt': Timestamp.now(),
+        'status': 'pending',
+      });
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => NGODashboard()),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Registration submitted for approval")),
+      );
+    } catch (e) {
+      print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error submitting registration")),
+      );
+    }
+  }
+
+  Future<String> uploadFile(File file, String path) async {
+    final ref = FirebaseStorage.instance.ref().child(path);
+    await ref.putFile(file);
+    return await ref.getDownloadURL();
   }
 
   @override
@@ -155,7 +213,7 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> {
               obscureText: true,
               decoration: const InputDecoration(
                 labelText: "Confirm Password",
-                border:  OutlineInputBorder(),
+                border: OutlineInputBorder(),
               ),
             ),
 
@@ -218,7 +276,8 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> {
               children: [
                 const Text("Already have an account? "),
                 GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen())),
+                  onTap: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => LoginScreen())),
                   child: const Text("Login here",
                       style: TextStyle(
                           color: Colors.blue, fontWeight: FontWeight.bold)),
