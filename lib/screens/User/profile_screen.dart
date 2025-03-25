@@ -74,7 +74,6 @@
 //   }
 // }
 
-
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
@@ -263,7 +262,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _fetchUserData() async {
     try {
-      await Future.delayed(const Duration(seconds: 1)); // Ensure Firebase initializes
+      await Future.delayed(
+          const Duration(seconds: 1)); // Ensure Firebase initializes
       User? user = _auth.currentUser;
 
       if (user == null) {
@@ -291,7 +291,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         ngosJoined = ["Care Foundation", "Green Earth"];
         drivesAttended = ["Food Drive - March", "Clothing Drive - February"];
         drivesApplied = ["Beach Cleanup - Upcoming"];
-        
+
         // Try to get real donation data if available
         if (userData.exists && userData.data() != null) {
           var data = userData.data() as Map<String, dynamic>;
@@ -303,13 +303,12 @@ class _ProfileScreenState extends State<ProfileScreen>
         } else {
           donationsMade = ["\$25.00", "\$50.00"];
         }
-        
+
         isLoading = false;
       });
 
       print("✅ User Email: $userEmail");
       print("✅ Profile Image URL: $profileImageUrl");
-
     } catch (e) {
       print("❌ Error fetching user data: $e");
       setState(() {
@@ -321,10 +320,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: isLoading 
+      body: isLoading
           ? const Center(
               child: CircularProgressIndicator(
                 color: Color(0xFF00A86B),
@@ -341,7 +340,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       children: [
                         // Header gradient background
                         Container(
-                          height: screenSize.height * 0.28,
+                          height: screenSize.height * 0.25,
                           width: double.infinity,
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
@@ -354,31 +353,28 @@ class _ProfileScreenState extends State<ProfileScreen>
                               bottomRight: Radius.circular(40),
                             ),
                           ),
-                          child: SafeArea(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 20.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-                                    onPressed: () => Navigator.pop(context),
-                                  ),
-                                  const Text(
-                                    'My Profile',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.settings_outlined, color: Colors.white),
-                                    onPressed: () {},
-                                  ),
-                                ],
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back_ios_new,
+                                    color: Colors.white),
+                                onPressed: () => Navigator.pop(context),
                               ),
-                            ),
+                              const Text(
+                                'My Profile',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.settings_outlined,
+                                    color: Colors.white),
+                                onPressed: () {},
+                              ),
+                            ],
                           ),
                         ),
                         // Profile image
@@ -404,7 +400,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   ? NetworkImage(profileImageUrl)
                                   : null,
                               child: profileImageUrl.isEmpty
-                                  ? const Icon(Icons.person, size: 55, color: Color(0xFF00A86B))
+                                  ? const Icon(Icons.person,
+                                      size: 55, color: Color(0xFF00A86B))
                                   : null,
                             ),
                           ),
@@ -418,7 +415,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         Text(
                           userName,
                           style: const TextStyle(
-                            fontSize: 22, 
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -443,9 +440,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                         children: [
                           _buildStatItem("NGOs", ngosJoined.length.toString()),
                           _buildDivider(),
-                          _buildStatItem("Drives", drivesAttended.length.toString()),
+                          _buildStatItem(
+                              "Drives", drivesAttended.length.toString()),
                           _buildDivider(),
-                          _buildStatItem("Donations", donationsMade.length.toString()),
+                          _buildStatItem(
+                              "Donations", donationsMade.length.toString()),
                         ],
                       ),
                     ),
@@ -455,10 +454,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Column(
                         children: [
-                          _buildProfileSection("NGOs Joined", ngosJoined, FontAwesomeIcons.handshake),
-                          _buildProfileSection("Drives Attended", drivesAttended, FontAwesomeIcons.calendarCheck),
-                          _buildProfileSection("Drives Applied To", drivesApplied, FontAwesomeIcons.calendarPlus),
-                          _buildProfileSection("Donations Made", donationsMade, FontAwesomeIcons.handHoldingUsd),
+                          _buildProfileSection("NGOs Joined", ngosJoined,
+                              FontAwesomeIcons.handshake),
+                          _buildProfileSection("Drives Attended",
+                              drivesAttended, FontAwesomeIcons.calendarCheck),
+                          _buildProfileSection("Drives Applied To",
+                              drivesApplied, FontAwesomeIcons.calendarPlus),
+                          _buildProfileSection("Donations Made", donationsMade,
+                              FontAwesomeIcons.handHoldingUsd),
                         ],
                       ),
                     ),
@@ -513,7 +516,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildProfileSection(String title, List<String> items, IconData sectionIcon) {
+  Widget _buildProfileSection(
+      String title, List<String> items, IconData sectionIcon) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -521,13 +525,9 @@ class _ProfileScreenState extends State<ProfileScreen>
           children: [
             Icon(sectionIcon, color: const Color(0xFF00A86B), size: 18),
             const SizedBox(width: 8),
-            Text(
-              title, 
-              style: const TextStyle(
-                fontSize: 18, 
-                fontWeight: FontWeight.bold
-              )
-            ),
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ],
         ),
         const SizedBox(height: 15),
@@ -535,10 +535,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             ? Center(
                 child: Padding(
                   padding: const EdgeInsets.all(15),
-                  child: Text(
-                    "No data available", 
-                    style: TextStyle(color: Colors.grey.shade500)
-                  ),
+                  child: Text("No data available",
+                      style: TextStyle(color: Colors.grey.shade500)),
                 ),
               )
             : Column(

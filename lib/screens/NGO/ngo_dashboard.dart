@@ -165,7 +165,6 @@
 //   }
 // }
 
-
 // // import 'package:flutter/material.dart';
 // // import 'package:cloud_firestore/cloud_firestore.dart';
 // // import 'package:firebase_auth/firebase_auth.dart';
@@ -250,8 +249,6 @@
 // //   }
 // // }
 
-
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -274,11 +271,11 @@ class NGODashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     User? user = FirebaseAuth.instance.currentUser;
-    
+
     if (user == null) {
       return _buildNotLoggedInView(context);
     }
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -314,11 +311,9 @@ class NGODashboard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.account_circle_outlined, 
-              size: 80, 
-              color: Theme.of(context).primaryColor.withOpacity(0.7)
-            ),
+            Icon(Icons.account_circle_outlined,
+                size: 80,
+                color: Theme.of(context).primaryColor.withOpacity(0.7)),
             const SizedBox(height: 16),
             const Text(
               "Please log in to access your dashboard",
@@ -333,7 +328,8 @@ class NGODashboard extends StatelessWidget {
                 );
               },
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               ),
               child: const Text("Go to Login", style: TextStyle(fontSize: 16)),
             ),
@@ -364,15 +360,30 @@ class NGODashboard extends StatelessWidget {
             }
 
             // NGO is approved
-            if (approvedSnapshot.hasData && approvedSnapshot.data!.docs.isNotEmpty) {
+            if (approvedSnapshot.hasData &&
+                approvedSnapshot.data!.docs.isNotEmpty) {
               var ngoData = approvedSnapshot.data!.docs.first;
               return ApprovedNGOView(ngoData: ngoData);
             }
 
             // NGO is pending approval
-            if (pendingSnapshot.hasData && pendingSnapshot.data!.docs.isNotEmpty) {
+            if (pendingSnapshot.hasData &&
+                pendingSnapshot.data!.docs.isNotEmpty) {
               var pendingData = pendingSnapshot.data!.docs.first;
-              return PendingApprovalView(pendingData: pendingData);
+
+              // Navigate to PendingApprovalScreen just once after build
+              Future.microtask(() {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        PendingApprovalView(pendingData: pendingData),
+                  ),
+                );
+              });
+
+              // Return a loading widget while navigation happens
+              return const Center(child: CircularProgressIndicator());
             }
 
             // NGO not found
@@ -396,7 +407,8 @@ class NGODashboard extends StatelessWidget {
                 color: Colors.amber.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(100),
               ),
-              child: const Icon(Icons.business_outlined, size: 80, color: Colors.amber),
+              child: const Icon(Icons.business_outlined,
+                  size: 80, color: Colors.amber),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -416,7 +428,8 @@ class NGODashboard extends StatelessWidget {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               ),
               child: const Text("Register NGO", style: TextStyle(fontSize: 16)),
             ),

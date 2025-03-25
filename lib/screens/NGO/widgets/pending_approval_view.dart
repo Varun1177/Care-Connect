@@ -16,46 +16,41 @@ class PendingApprovalView extends StatelessWidget {
     final name = pendingData['name'] ?? 'Your NGO';
     final submittedAt = pendingData['submittedAt'] as Timestamp?;
     final logoUrl = pendingData['logoUrl'];
-    
+
     // Calculate days since submission
     int daysSinceSubmission = 0;
     if (submittedAt != null) {
       final difference = DateTime.now().difference(submittedAt.toDate());
       daysSinceSubmission = difference.inDays;
     }
-    
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // Header with logo
-          _buildHeader(context, name, logoUrl),
-          
-          const SizedBox(height: 20),
-          
-          // Animated illustration
-          SizedBox(
-            height: 200,
-            child: Lottie.network(
-              'https://assets10.lottiefiles.com/packages/lf20_qgkwuiyx.json',
-              repeat: true,
-            ),
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Status card
-          _buildStatusCard(context, daysSinceSubmission),
-          
-          const SizedBox(height: 30),
-          
-          // What to expect section
-          _buildWhatToExpectSection(context),
-          
-          const SizedBox(height: 20),
-          
-          // Contact section
-          _buildContactSection(context),
-        ],
+
+    return Container(
+      color: Colors.white,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Header with logo
+            _buildHeader(context, name, logoUrl),
+      
+            const SizedBox(height: 20),
+      
+            // Status card
+            _buildStatusCard(context, daysSinceSubmission),
+      
+            const SizedBox(height: 20),
+      
+            // What to expect section
+            _buildWhatToExpectSection(context),
+      
+            const SizedBox(height: 20),
+      
+            // Contact section
+            _buildContactSection(context),
+
+            const SizedBox(height: 20),
+
+          ],
+        ),
       ),
     );
   }
@@ -64,18 +59,17 @@ class PendingApprovalView extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.orange,
-            Colors.orangeAccent.shade200,
-          ],
+      decoration: const BoxDecoration(
+        color: Color(0xFF00A86B),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(50),
+          bottomRight: Radius.circular(50),
         ),
       ),
       child: Column(
         children: [
+          const SizedBox(height: 25),
+
           // Logo
           CircleAvatar(
             radius: 50,
@@ -86,7 +80,7 @@ class PendingApprovalView extends StatelessWidget {
                 : null,
           ),
           const SizedBox(height: 16),
-          
+
           // NGO Name
           Text(
             name,
@@ -94,13 +88,14 @@ class PendingApprovalView extends StatelessWidget {
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.white,
+              decoration: TextDecoration.none,
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Status Badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
@@ -113,8 +108,10 @@ class PendingApprovalView extends StatelessWidget {
                 Text(
                   "Pending Approval",
                   style: TextStyle(
+                    fontSize: 30,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.none,
                   ),
                 ),
               ],
@@ -145,15 +142,16 @@ class PendingApprovalView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Status Timeline
               _buildStatusTimeline(context),
-              
+
               const SizedBox(height: 16),
-              
+
               // Time indicator
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -166,9 +164,9 @@ class PendingApprovalView extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Estimated Time
               const Text(
                 "Estimated approval time: 5-7 business days",
@@ -219,7 +217,7 @@ class PendingApprovalView extends StatelessWidget {
   }) {
     Color circleColor;
     IconData icon;
-    
+
     if (isCompleted) {
       circleColor = Colors.green;
       icon = Icons.check;
@@ -230,7 +228,7 @@ class PendingApprovalView extends StatelessWidget {
       circleColor = Colors.grey.shade300;
       icon = Icons.circle;
     }
-    
+
     return Expanded(
       child: Column(
         children: [
@@ -302,7 +300,8 @@ class PendingApprovalView extends StatelessWidget {
               _buildExpectationItem(
                 context,
                 icon: Icons.email,
-                text: "You will receive an email notification once your application is approved",
+                text:
+                    "You will receive an email notification once your application is approved",
               ),
               const SizedBox(height: 12),
               _buildExpectationItem(

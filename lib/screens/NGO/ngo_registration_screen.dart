@@ -1299,7 +1299,7 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> with Sing
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  List<String> donationTypes = ['Money', 'Clothes', 'Books', 'Food'];
+  List<String> donationTypes = ['Money', 'Clothes', 'Books'];
   List<String> selectedDonations = [];
 
   List<String> sectors = [
@@ -1353,9 +1353,13 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> with Sing
 
   void signUp() async {
     if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Passwords do not match!")));
-      return;
+
+      try {
+      await _auth.signInWithEmailAndPassword(email: emailController.text, password: passwordController.text);
+    } catch (e) {
+      print('Login Error: $e');
+      return null;
+    }
     }
 
     setState(() {
@@ -1933,42 +1937,44 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> with Sing
           ),
           const SizedBox(height: 10),
           
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: donationTypes.map((type) {
-              final isSelected = selectedDonations.contains(type);
-              return FilterChip(
-                label: Text(type),
-                selected: isSelected,
-                showCheckmark: false,
-                onSelected: (bool selected) {
-                  setState(() {
-                    selected
-                        ? selectedDonations.add(type)
-                        : selectedDonations.remove(type);
-                  });
-                },
-                selectedColor: const Color(0xFF00A86B).withOpacity(0.2),
-                backgroundColor: Colors.grey.shade100,
-                labelStyle: TextStyle(
-                  color: isSelected ? const Color(0xFF00A86B) : Colors.grey.shade800,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  side: BorderSide(
-                    color: isSelected
-                        ? const Color(0xFF00A86B)
-                        : Colors.grey.shade400,
-                    width: 1.5,
+          Center(
+            child: Wrap(
+              spacing: 15,
+              runSpacing: 5,
+              children: donationTypes.map((type) {
+                final isSelected = selectedDonations.contains(type);
+                return FilterChip(
+                  label: Text(type),
+                  selected: isSelected,
+                  showCheckmark: false,
+                  onSelected: (bool selected) {
+                    setState(() {
+                      selected
+                          ? selectedDonations.add(type)
+                          : selectedDonations.remove(type);
+                    });
+                  },
+                  selectedColor: const Color(0xFF00A86B).withOpacity(0.2),
+                  backgroundColor: Colors.grey.shade100,
+                  labelStyle: TextStyle(
+                    color: isSelected ? const Color(0xFF00A86B) : Colors.grey.shade800,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-              );
-            }).toList(),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    side: BorderSide(
+                      color: isSelected
+                          ? const Color(0xFF00A86B)
+                          : Colors.grey.shade400,
+                      width: 1.5,
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                );
+              }).toList(),
+            ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height:25),
           
           Row(
             children: [
