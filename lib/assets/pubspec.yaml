@@ -1,0 +1,4 @@
+dependencies:
+  flutter:
+    sdk: flutter
+  http: latest

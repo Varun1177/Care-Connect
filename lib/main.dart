@@ -3,6 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/login_screen.dart';
+import 'package:flutter/material.dart';
+import 'screens/registration.dart';
+import 'screens/verification.dart';
+
+
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'NGO Verification',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: RegistrationScreen(),
+    );
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
