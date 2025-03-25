@@ -15,6 +15,9 @@ ios/Flutter/Flutter.podspec
 # Firebase related
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
+ios/Runner/Info.plist
+
+
 
 # Miscellaneous
 *.log
