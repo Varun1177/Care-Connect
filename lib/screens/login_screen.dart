@@ -1,3 +1,5 @@
+import 'package:care__connect/screens/NGO/ngo_dashboard.dart';
+import 'package:care__connect/screens/User/main_screen.dart';
 import 'package:care__connect/screens/splash_screen.dart';
 import 'package:care__connect/screens/User/user_dashboard.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dashboard_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:care__connect/services/auth_service.dart';
+import 'Admin/admin_dashboard.dart';
+import 'package:care__connect/screens/User/home_screen.dart';
 
 class LoginScreen extends StatefulWidget{
   const LoginScreen({super.key});
@@ -34,12 +39,23 @@ class _loginScreenState extends State<LoginScreen>{
 
       await _auth.signInWithCredential(credential);
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const UserDashboardScreen(role: "user",),
-        ),
-      );
+      String ? role = (await AuthService().getUserRole(_auth.currentUser!.uid));
+
+      print("User UID: ${_auth.currentUser!.uid}");
+      print("Fetched Role: $role");
+
+
+      if(role == 'admin'){
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => AdminDashboard()));
+      }else if(role == 'user'){
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
+      }else if(role == 'ngo'){
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>  NGODashboard()));
+      }
+      else if(role == null){
+        print("Error: User role not found.");
+        return;
+      }
     } catch (e) {
       print('Error signing in with Google: $e');
     }
@@ -92,7 +108,7 @@ class _loginScreenState extends State<LoginScreen>{
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
-                  child: Image.asset('lib/assets/globe.png', height: 350),
+                  child: Image.asset('lib/assets/login.png', height: 250),
                 ),
               ),
             ),

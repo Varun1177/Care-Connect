@@ -96,7 +96,7 @@ class _SignupScreenState extends State<SignupScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => const UserDashboardScreen(role: "user"),
+              builder: (context) => const UserDashboardScreen(),
             ),
           );
         }
@@ -132,9 +132,7 @@ class _SignupScreenState extends State<SignupScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const UserDashboardScreen(
-            role: "user",
-          ),
+          builder: (context) => const UserDashboardScreen(),
         ),
       );
     } catch (e) {

@@ -1,162 +1,8 @@
-// import 'package:flutter/material.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:url_launcher/url_launcher.dart';
-
-// class AdminDashboard extends StatefulWidget {
-//   const AdminDashboard({Key? key}) : super(key: key);
-
-//   @override
-//   _AdminDashboardState createState() => _AdminDashboardState();
-// }
-
-// class _AdminDashboardState extends State<AdminDashboard> {
-//   final FirebaseAuth _auth = FirebaseAuth.instance;
-//   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-//   // Approve NGO function
-//   void _approveNGO(String ngoId) async {
-//     await _firestore.collection('ngos').doc(ngoId).update({'approved': true});
-//   }
-
-//   // Reject NGO function
-//   void _rejectNGO(String ngoId) async {
-//     await _firestore.collection('ngos').doc(ngoId).delete();
-//   }
-
-//   // Logout function
-//   void _logout() async {
-//     await _auth.signOut();
-//     Navigator.pushReplacementNamed(context, '/login');
-//   }
-
-//   // Open document in browser
-//   void _openDocument(String url) async {
-//     if (await canLaunch(url)) {
-//       await launch(url);
-//     } else {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(content: Text("Cannot open document")),
-//       );
-//     }
-//   }
-
-//   void approveNGO(String ngoId) async {
-//   try {
-//     DocumentSnapshot ngoDoc = await FirebaseFirestore.instance.collection('pending_approvals').doc(ngoId).get();
-
-//     if (ngoDoc.exists) {
-//       Map<String, dynamic> data = ngoDoc.data() as Map<String, dynamic>;
-
-//       await FirebaseFirestore.instance.collection('ngos').doc(ngoId).set({
-//         'ngoId': data['ngoId'],
-//         'name': data['name'],
-//         'email': data['email'],
-//         'sector': data['sector'],
-//         'description': data['description'],
-//         'personName': data['personName'],
-//         'personRole': data['personRole'],
-//         'logoUrl': data['logoUrl'],
-//         'documents': [data['documentUrl']],
-//         'approved': true,
-//         'postedDrives': [],
-//         'donationsReceived': [],
-//         'ratings': {},
-//       });
-
-//       // Remove from pending approvals
-//       await FirebaseFirestore.instance.collection('pending_approvals').doc(ngoId).delete();
-
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(content: Text("NGO Approved Successfully")),
-//       );
-//     }
-//   } catch (e) {
-//     print("Error: $e");
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       const SnackBar(content: Text("Error approving NGO")),
-//     );
-//   }
-// }
-
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text("Admin Dashboard"),
-//         backgroundColor: Colors.green,
-//         actions: [
-//           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
-//         ],
-//       ),
-//       body: StreamBuilder<QuerySnapshot>(
-//         stream: _firestore.collection('ngos').where('approved', isEqualTo: false).snapshots(),
-//         builder: (context, snapshot) {
-//           if (snapshot.connectionState == ConnectionState.waiting) {
-//             return const Center(child: CircularProgressIndicator());
-//           }
-//           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-//             return const Center(child: Text("No pending NGOs"));
-//           }
-
-//           final ngos = snapshot.data!.docs;
-
-//           return ListView.builder(
-//             itemCount: ngos.length,
-//             itemBuilder: (context, index) {
-//               var ngo = ngos[index];
-//               List<dynamic> documents = ngo['documents'] ?? [];
-
-//               return Card(
-//                 margin: const EdgeInsets.all(10),
-//                 child: ExpansionTile(
-//                   title: Text(ngo['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-//                   subtitle: Text(ngo['email']),
-//                   children: [
-//                     const Padding(
-//                       padding: EdgeInsets.all(10),
-//                       child: Text("Uploaded Documents:", style: TextStyle(fontWeight: FontWeight.bold)),
-//                     ),
-//                     // List uploaded documents
-//                     ...documents.map((doc) => ListTile(
-//                           title: Text("Document ${documents.indexOf(doc) + 1}"),
-//                           trailing: const Icon(Icons.open_in_new, color: Colors.blue),
-//                           onTap: () => _openDocument(doc),
-//                         )),
-//                     // Approve / Reject buttons
-//                     Row(
-//                       mainAxisAlignment: MainAxisAlignment.spaceAround,
-//                       children: [
-//                         ElevatedButton(
-//                           onPressed: () => _approveNGO(ngo.id),
-//                           style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-//                           child: const Text("Approve", style: TextStyle(color: Colors.white)),
-//                         ),
-//                         ElevatedButton(
-//                           onPressed: () => _rejectNGO(ngo.id),
-//                           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-//                           child: const Text("Reject", style: TextStyle(color: Colors.white)),
-//                         ),
-//                       ],
-//                     ),
-//                     const SizedBox(height: 10),
-//                   ],
-//                 ),
-//               );
-//             },
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
-
-
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:care__connect/services/auth_service.dart';
+import 'package:care__connect/screens/login_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   @override
@@ -166,10 +12,19 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  void _signOut(BuildContext context) async {
+    await AuthService().signOut();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+    );
+  }
+
   /// Approve NGO: Move from `pending_approvals` to `ngos`
   Future<void> approveNGO(String ngoId) async {
     try {
-      DocumentSnapshot ngoDoc = await _firestore.collection('pending_approvals').doc(ngoId).get();
+      DocumentSnapshot ngoDoc =
+          await _firestore.collection('pending_approvals').doc(ngoId).get();
 
       if (ngoDoc.exists) {
         Map<String, dynamic> data = ngoDoc.data() as Map<String, dynamic>;
@@ -226,7 +81,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Admin Dashboard')),
+      appBar: AppBar(
+        title: Text('Admin Dashboard'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => _signOut(context),
+          ),
+        ],
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore.collection('pending_approvals').snapshots(),
         builder: (context, snapshot) {
@@ -260,9 +123,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       documentUrl != null
                           ? TextButton(
                               onPressed: () => viewDocument(documentUrl),
-                              child: Text('View Document', style: TextStyle(color: Colors.blue)),
+                              child: Text('View Document',
+                                  style: TextStyle(color: Colors.blue)),
                             )
-                          : Text('No Document Uploaded', style: TextStyle(color: Colors.red)),
+                          : Text('No Document Uploaded',
+                              style: TextStyle(color: Colors.red)),
                     ],
                   ),
                   trailing: Row(

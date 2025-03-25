@@ -3,9 +3,8 @@ import 'package:care__connect/services/auth_service.dart';
 import 'package:care__connect/screens/login_screen.dart';
 
 class UserDashboardScreen extends StatelessWidget {
-  final String role;
 
-  const UserDashboardScreen({super.key, required this.role});
+  const UserDashboardScreen({super.key});
 
   void _signOut(BuildContext context) async {
     await AuthService().signOut();
