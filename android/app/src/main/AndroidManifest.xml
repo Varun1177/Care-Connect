@@ -8,6 +8,11 @@
         android:label="care__connect"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDEN8di1tEdoy90sB6w-_4zrTyXDReKzDc" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

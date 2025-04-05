@@ -2,6 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>GMSApiKey</key>
+	<string>AIzaSyDEN8di1tEdoy90sB6w-_4zrTyXDReKzDc</string>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to select NGO location</string>
+
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>We need your location to select NGO location</string>
+
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need your location to select NGO location</string>
+
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
