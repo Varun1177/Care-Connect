@@ -8,9 +8,6 @@ import 'services/auth_service.dart';
 import 'package:care__connect/screens/User/theme_provider.dart';
 import 'package:provider/provider.dart';
 
-
-
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -20,7 +17,6 @@ void main() async {
       child: const MyApp(),
     ),
   );
-  
 }
 
 class MyApp extends StatelessWidget {
@@ -45,9 +41,12 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        // Waiting for authentication state.
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasData) {
+        } 
+        // Authenticated user.
+        else if (snapshot.hasData) {
           final User? user = snapshot.data;
           return FutureBuilder<String?>(
             future: AuthService().getUserRole(user!.uid),
@@ -68,7 +67,9 @@ class AuthWrapper extends StatelessWidget {
               }
             },
           );
-        } else {
+        } 
+        // Not authenticated.
+        else {
           return const LoginScreen();
         }
       },

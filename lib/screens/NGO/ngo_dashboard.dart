@@ -3,9 +3,13 @@
 // import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:care__connect/services/auth_service.dart';
 // import 'package:care__connect/screens/login_screen.dart';
+// import 'widgets/approved_ngo_view.dart';
+// import 'widgets/pending_approval_view.dart';
 
 // class NGODashboard extends StatelessWidget {
+//   const NGODashboard({Key? key}) : super(key: key);
 
+//   // Sign out using your AuthService.
 //   void _signOut(BuildContext context) async {
 //     await AuthService().signOut();
 //     Navigator.pushReplacement(
@@ -17,244 +21,178 @@
 //   @override
 //   Widget build(BuildContext context) {
 //     User? user = FirebaseAuth.instance.currentUser;
+
+//     // If user is not logged in, display a not‑logged‑in view.
 //     if (user == null) {
-//       return Scaffold(
-//         appBar: AppBar(title: const Text("NGO Dashboard",),actions: [
-//           IconButton(
-//             icon: const Icon(Icons.logout),
-//             onPressed: () => _signOut(context),
-//           ),
-//         ],),
-//         body: const Center(child: Text("Please log in first.")),
-//       );
-//     } else {
-//       return Scaffold(
-//         appBar: AppBar(title: const Text("NGO Dashboard"),actions: [
-//           IconButton(
-//             icon: const Icon(Icons.logout),
-//             onPressed: () => _signOut(context),
-//           ),
-//         ],),
-//         body: StreamBuilder<QuerySnapshot>(
-//           stream: FirebaseFirestore.instance
-//               .collection('ngos')
-//               .where('email', isEqualTo: user.email)
-//               .snapshots(), // 🔥 Listens for real-time updates!
-//           builder: (context, approvedSnapshot) {
-//             return StreamBuilder<QuerySnapshot>(
-//               stream: FirebaseFirestore.instance
-//                   .collection('pending_approvals')
-//                   .where('email', isEqualTo: user.email)
-//                   .snapshots(), // 🔥 Listens for real-time updates!
-//               builder: (context, pendingSnapshot) {
-//                 if (approvedSnapshot.connectionState ==
-//                         ConnectionState.waiting ||
-//                     pendingSnapshot.connectionState ==
-//                         ConnectionState.waiting) {
-//                   return const Center(child: CircularProgressIndicator());
-//                 }
-
-//                 // ✅ NGO is approved
-//                 if (approvedSnapshot.hasData &&
-//                     approvedSnapshot.data!.docs.isNotEmpty) {
-//                   var ngoData = approvedSnapshot.data!.docs.first;
-//                   return NGOApprovedView(ngoData: ngoData);
-//                 }
-
-//                 // 🚀 NGO is pending approval
-//                 if (pendingSnapshot.hasData &&
-//                     pendingSnapshot.data!.docs.isNotEmpty) {
-//                   return PendingApprovalView();
-//                 }
-
-//                 // ❌ NGO not found
-//                 return const Center(
-//                   child: Text("No NGO data found. Please register first."),
-//                 );
-//               },
-//             );
-//           },
-//         ),
-//       );
+//       return _buildNotLoggedInView(context);
 //     }
-//   }
-// }
 
-// class NGOApprovedView extends StatelessWidget {
-//   final DocumentSnapshot ngoData;
-
-//   const NGOApprovedView({required this.ngoData});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: const EdgeInsets.all(16),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           // NGO Logo
-//           Center(
-//             child: CircleAvatar(
-//               radius: 50,
-//               backgroundImage: ngoData['logoUrl'] != null
-//                   ? NetworkImage(ngoData['logoUrl'])
-//                   : null,
-//               child: ngoData['logoUrl'] == null
-//                   ? const Icon(Icons.image, size: 40)
-//                   : null,
-//             ),
-//           ),
-//           const SizedBox(height: 15),
-
-//           // NGO Details
-//           Text("NGO Name: ${ngoData['name']}",
-//               style:
-//                   const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-//           Text("Sector: ${ngoData['sector']}",
-//               style: const TextStyle(fontSize: 16)),
-//           Text("Description: ${ngoData['description']}",
-//               style: const TextStyle(fontSize: 16)),
-//           const SizedBox(height: 20),
-
-//           // Status Message
-//           const Center(
-//             child: Text(
-//               "Your NGO is Approved! 🎉",
-//               style: const TextStyle(
-//                   fontSize: 16,
-//                   color: Colors.green,
-//                   fontWeight: FontWeight.bold),
-//             ),
-//           ),
-
-//           const SizedBox(height: 30),
-
-//           // Button to access NGO Features
-//           ElevatedButton(
-//             onPressed: () => navigateToFeature(context),
-//             style: ElevatedButton.styleFrom(
-//               minimumSize: const Size(double.infinity, 50),
-//               backgroundColor: Colors.blue,
-//             ),
-//             child: const Text("Access NGO Features",
-//                 style: TextStyle(fontSize: 16)),
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text(
+//           "NGO Dashboard",
+//           style: TextStyle(fontWeight: FontWeight.bold),
+//         ),
+//         elevation: 0,
+//         actions: [
+//           IconButton(
+//             icon: const Icon(Icons.logout),
+//             tooltip: "Logout",
+//             onPressed: () => _signOut(context),
 //           ),
 //         ],
 //       ),
+//       body: _buildDashboardContent(context, user),
 //     );
 //   }
 
-//   void navigateToFeature(BuildContext context) {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       const SnackBar(content: Text("Navigating to NGO Features...")),
+//   Widget _buildNotLoggedInView(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text("NGO Dashboard"),
+//         elevation: 0,
+//         actions: [
+//           IconButton(
+//             icon: const Icon(Icons.logout),
+//             onPressed: () => _signOut(context),
+//           ),
+//         ],
+//       ),
+//       body: Center(
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             Icon(Icons.account_circle_outlined,
+//                 size: 80,
+//                 color: Theme.of(context).primaryColor.withOpacity(0.7)),
+//             const SizedBox(height: 16),
+//             const Text(
+//               "Please log in to access your dashboard",
+//               style: TextStyle(fontSize: 18),
+//             ),
+//             const SizedBox(height: 24),
+//             ElevatedButton(
+//               onPressed: () {
+//                 Navigator.pushReplacement(
+//                   context,
+//                   MaterialPageRoute(builder: (context) => const LoginScreen()),
+//                 );
+//               },
+//               style: ElevatedButton.styleFrom(
+//                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+//               ),
+//               child: const Text("Go to Login", style: TextStyle(fontSize: 16)),
+//             ),
+//           ],
+//         ),
+//       ),
 //     );
-//     // TODO: Navigate to NGO feature screen
 //   }
-// }
 
-// class PendingApprovalView extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return const Center(
-//       child: Text(
-//         "Your NGO is Pending Approval 🚀",
-//         style: TextStyle(
-//             fontSize: 16, color: Colors.orange, fontWeight: FontWeight.bold),
+//   Widget _buildDashboardContent(BuildContext context, User user) {
+//     return StreamBuilder<QuerySnapshot>(
+//       stream: FirebaseFirestore.instance
+//           .collection('ngos')
+//           .where('email', isEqualTo: user.email)
+//           .snapshots(),
+//       builder: (context, approvedSnapshot) {
+//         return StreamBuilder<QuerySnapshot>(
+//           stream: FirebaseFirestore.instance
+//               .collection('pending_approvals')
+//               .where('email', isEqualTo: user.email)
+//               .snapshots(),
+//           builder: (context, pendingSnapshot) {
+//             // Show a loading spinner if any snapshot is still waiting.
+//             if (approvedSnapshot.connectionState == ConnectionState.waiting ||
+//                 pendingSnapshot.connectionState == ConnectionState.waiting) {
+//               return const Center(child: CircularProgressIndicator());
+//             }
+
+//             // If NGO is approved, display the ApprovedNGOView.
+//             if (approvedSnapshot.hasData &&
+//                 approvedSnapshot.data!.docs.isNotEmpty) {
+//               var ngoData = approvedSnapshot.data!.docs.first;
+//               return ApprovedNGOView(ngoData: ngoData);
+//             }
+
+//             // If NGO is pending approval, navigate to the PendingApprovalView.
+//             if (pendingSnapshot.hasData &&
+//                 pendingSnapshot.data!.docs.isNotEmpty) {
+//               var pendingData = pendingSnapshot.data!.docs.first;
+
+//               // Use a microtask to push the PendingApprovalView once build is finished.
+//               Future.microtask(() {
+//                 Navigator.pushReplacement(
+//                   context,
+//                   MaterialPageRoute(
+//                     builder: (context) =>
+//                         PendingApprovalView(pendingData: pendingData),
+//                   ),
+//                 );
+//               });
+//               return const Center(child: CircularProgressIndicator());
+//             }
+
+//             // If no NGO found, show a "No NGO found" view.
+//             return _buildNoNGOFoundView(context);
+//           },
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildNoNGOFoundView(BuildContext context) {
+//     return Center(
+//       child: Padding(
+//         padding: const EdgeInsets.all(24.0),
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             Container(
+//               padding: const EdgeInsets.all(24),
+//               decoration: BoxDecoration(
+//                 color: Colors.amber.withOpacity(0.2),
+//                 borderRadius: BorderRadius.circular(100),
+//               ),
+//               child: const Icon(Icons.business_outlined,
+//                   size: 80, color: Colors.amber),
+//             ),
+//             const SizedBox(height: 24),
+//             const Text(
+//               "No NGO found",
+//               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+//             ),
+//             const SizedBox(height: 12),
+//             const Text(
+//               "It looks like you haven't registered your NGO yet. Please register first to access the dashboard features.",
+//               textAlign: TextAlign.center,
+//               style: TextStyle(fontSize: 16, color: Colors.black54),
+//             ),
+//             const SizedBox(height: 32),
+//             ElevatedButton(
+//               onPressed: () {
+//                 // TODO: Navigate to NGO registration.
+//                 Navigator.pop(context);
+//               },
+//               style: ElevatedButton.styleFrom(
+//                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+//               ),
+//               child: const Text("Register NGO", style: TextStyle(fontSize: 16)),
+//             ),
+//           ],
+//         ),
 //       ),
 //     );
 //   }
 // }
-
-// // import 'package:flutter/material.dart';
-// // import 'package:cloud_firestore/cloud_firestore.dart';
-// // import 'package:firebase_auth/firebase_auth.dart';
-// // import 'package:care__connect/services/auth_service.dart';
-// // import 'package:care__connect/screens/login_screen.dart';
-// // import 'package:care__connect/screens/NGO/ngo_approved_view.dart';
-// // import 'package:care__connect/screens/NGO/ngo_pending_view.dart';
-
-// // class NGODashboard extends StatelessWidget {
-// //   void _signOut(BuildContext context) async {
-// //     await AuthService().signOut();
-// //     Navigator.pushReplacement(
-// //       context,
-// //       MaterialPageRoute(builder: (context) => const LoginScreen()),
-// //     );
-// //   }
-
-// //   @override
-// //   Widget build(BuildContext context) {
-// //     User? user = FirebaseAuth.instance.currentUser;
-// //     if (user == null) {
-// //       return Scaffold(
-// //         appBar: AppBar(
-// //           title: const Text("NGO Dashboard"),
-// //           actions: [
-// //             IconButton(
-// //               icon: const Icon(Icons.logout),
-// //               onPressed: () => _signOut(context),
-// //             ),
-// //           ],
-// //         ),
-// //         body: const Center(child: Text("Please log in first.")),
-// //       );
-// //     }
-
-// //     return Scaffold(
-// //       appBar: AppBar(
-// //         title: const Text("NGO Dashboard"),
-// //         actions: [
-// //           IconButton(
-// //             icon: const Icon(Icons.logout),
-// //             onPressed: () => _signOut(context),
-// //           ),
-// //         ],
-// //       ),
-// //       body: StreamBuilder<QuerySnapshot>(
-// //         stream: FirebaseFirestore.instance
-// //             .collection('ngos')
-// //             .where('email', isEqualTo: user.email)
-// //             .snapshots(),
-// //         builder: (context, approvedSnapshot) {
-// //           return StreamBuilder<QuerySnapshot>(
-// //             stream: FirebaseFirestore.instance
-// //                 .collection('pending_approvals')
-// //                 .where('email', isEqualTo: user.email)
-// //                 .snapshots(),
-// //             builder: (context, pendingSnapshot) {
-// //               if (approvedSnapshot.connectionState == ConnectionState.waiting ||
-// //                   pendingSnapshot.connectionState == ConnectionState.waiting) {
-// //                 return const Center(child: CircularProgressIndicator());
-// //               }
-
-// //               if (approvedSnapshot.hasData &&
-// //                   approvedSnapshot.data!.docs.isNotEmpty) {
-// //                 var ngoData = approvedSnapshot.data!.docs.first;
-// //                 return NGOApprovedView(ngoData: ngoData);
-// //               }
-
-// //               if (pendingSnapshot.hasData &&
-// //                   pendingSnapshot.data!.docs.isNotEmpty) {
-// //                 return const NGOPendingApprovalView();
-// //               }
-
-// //               return const Center(
-// //                 child: Text("No NGO data found. Please register first."),
-// //               );
-// //             },
-// //           );
-// //         },
-// //       ),
-// //     );
-// //   }
-// // }
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:care__connect/services/auth_service.dart';
 import 'package:care__connect/screens/login_screen.dart';
-import 'widgets/approved_ngo_view.dart';
+
+import 'package:care__connect/screens/NGO/widgets/approved_ngo_view.dart'; // Corrected import
 import 'widgets/pending_approval_view.dart';
 
 class NGODashboard extends StatelessWidget {
@@ -328,8 +266,7 @@ class NGODashboard extends StatelessWidget {
                 );
               },
               style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               ),
               child: const Text("Go to Login", style: TextStyle(fontSize: 16)),
             ),
@@ -354,24 +291,19 @@ class NGODashboard extends StatelessWidget {
           builder: (context, pendingSnapshot) {
             if (approvedSnapshot.connectionState == ConnectionState.waiting ||
                 pendingSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
 
-            // NGO is approved
             if (approvedSnapshot.hasData &&
                 approvedSnapshot.data!.docs.isNotEmpty) {
               var ngoData = approvedSnapshot.data!.docs.first;
               return ApprovedNGOView(ngoData: ngoData);
             }
 
-            // NGO is pending approval
             if (pendingSnapshot.hasData &&
                 pendingSnapshot.data!.docs.isNotEmpty) {
               var pendingData = pendingSnapshot.data!.docs.first;
 
-              // Navigate to PendingApprovalScreen just once after build
               Future.microtask(() {
                 Navigator.pushReplacement(
                   context,
@@ -381,12 +313,9 @@ class NGODashboard extends StatelessWidget {
                   ),
                 );
               });
-
-              // Return a loading widget while navigation happens
               return const Center(child: CircularProgressIndicator());
             }
 
-            // NGO not found
             return _buildNoNGOFoundView(context);
           },
         );
@@ -424,12 +353,10 @@ class NGODashboard extends StatelessWidget {
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
-                // TODO: Navigate to NGO registration
-                Navigator.pop(context);
+                Navigator.pop(context); // You can replace this with registration navigation
               },
               style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               ),
               child: const Text("Register NGO", style: TextStyle(fontSize: 16)),
             ),
