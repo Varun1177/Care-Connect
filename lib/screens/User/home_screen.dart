@@ -137,8 +137,6 @@
 //   }
 // }
 
-
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -149,10 +147,11 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -187,7 +186,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: StreamBuilder(
-                  stream: FirebaseFirestore.instance.collection('ngo_drives').snapshots(),
+                  stream: FirebaseFirestore.instance
+                      .collection('campaigns')
+                      .where('isClosed', isEqualTo: false)
+                      .snapshots(),
                   builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
@@ -223,9 +225,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     var drives = snapshot.data!.docs;
 
                     return GridView.builder(
-                      padding: const EdgeInsets.only(top: 10, bottom: 20),
+                      padding: const EdgeInsets.only(
+                        top: 10,
+                        bottom: 20,
+                      ),
                       itemCount: drives.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         crossAxisSpacing: 15,
                         mainAxisSpacing: 15,
@@ -285,7 +291,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                      icon: const Icon(Icons.notifications_outlined,
+                          color: Colors.white),
                       onPressed: () {},
                     ),
                   ),
@@ -322,7 +329,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
                 JoinDriveScreen(drive: drive),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return FadeTransition(opacity: animation, child: child);
             },
           ),
@@ -347,7 +355,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               flex: 3,
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(15)),
                   image: DecorationImage(
                     image: NetworkImage(drive['image']),
                     fit: BoxFit.cover,
@@ -358,7 +367,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(15)),
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -380,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      drive['name'],
+                      drive['purpose'],
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -419,11 +429,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           size: 14,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          drive['date'],
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
+                        Expanded(
+                          child: Text(
+                            (drive['date'] as Timestamp).toDate().toLocal().toString().split(' ')[0],
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -449,7 +463,7 @@ class JoinDriveScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Join ${drive['name']}"),
+        title: Text("Join ${drive['purpose']}"),
         backgroundColor: const Color(0xFF00A86B),
         elevation: 0,
         centerTitle: true,
@@ -478,7 +492,7 @@ class JoinDriveScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    drive['name'],
+                    drive['purpose'],
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -487,9 +501,9 @@ class JoinDriveScreen extends StatelessWidget {
                   const SizedBox(height: 15),
                   _buildInfoRow(Icons.location_on, drive['location']),
                   const SizedBox(height: 8),
-                  _buildInfoRow(Icons.calendar_today, drive['date']),
-                  const SizedBox(height: 8),
-                  _buildInfoRow(Icons.people_outline, "Organization: ${drive['organization'] ?? 'N/A'}"),
+                  // _buildInfoRow(Icons.calendar_today, drive['date'].toString()),
+                  // const SizedBox(height: 8),
+                  _buildNGOInfoRow(drive['ngoId']),
                   const SizedBox(height: 20),
                   const Text(
                     "About This Drive",
@@ -500,8 +514,8 @@ class JoinDriveScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    drive['description'] ?? 
-                    "Join us for this amazing drive to help those in need. Your support can make a significant difference in the lives of many people.",
+                    drive['description'] ??
+                        "Join us for this amazing drive to help those in need. Your support can make a significant difference in the lives of many people.",
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey.shade700,
@@ -517,7 +531,8 @@ class JoinDriveScreen extends StatelessWidget {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text("Successfully joined ${drive['name']}!"),
+                            content:
+                                Text("Successfully joined ${drive['purpose']}!"),
                             backgroundColor: const Color(0xFF00A86B),
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
@@ -573,4 +588,23 @@ class JoinDriveScreen extends StatelessWidget {
       ],
     );
   }
+
+  Widget _buildNGOInfoRow(String ngoId) {
+  return FutureBuilder<DocumentSnapshot>(
+    future: FirebaseFirestore.instance.collection('ngos').doc(ngoId).get(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return _buildInfoRow(Icons.people_outline, "Loading organization...");
+      }
+      if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+        return _buildInfoRow(Icons.people_outline, "Organization: N/A");
+      }
+
+      final ngoData = snapshot.data!.data() as Map<String, dynamic>;
+      final ngoName = ngoData['name'] ?? 'N/A';
+
+      return _buildInfoRow(Icons.people_outline, "Organization: $ngoName");
+    },
+  );
+}
 }

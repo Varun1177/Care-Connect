@@ -207,11 +207,9 @@
 //   }
 // }
 
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DonateScreen extends StatefulWidget {
   const DonateScreen({super.key});
@@ -220,12 +218,19 @@ class DonateScreen extends StatefulWidget {
   _DonateScreenState createState() => _DonateScreenState();
 }
 
-class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderStateMixin {
+class _DonateScreenState extends State<DonateScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedAmount = 500;
   String _selectedCause = "Food Donation";
   late AnimationController _animationController;
   final _auth = FirebaseAuth.instance;
   late Animation<double> _fadeAnimation;
+
+  List<Map<String, dynamic>> _ngos = [];
+  String? _selectedNgoId;
+  String? _selectedNgoName;
+
+  List<Map<String, dynamic>> _ngoList = [];
 
   final List<int> donationAmounts = [100, 500, 1000, 5000];
   final List<Map<String, dynamic>> donationCauses = [
@@ -235,6 +240,22 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
     {"name": "Women Empowerment", "icon": Icons.people},
     {"name": "Animal Welfare", "icon": Icons.pets}
   ];
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _animationController = AnimationController(
+  //     vsync: this,
+  //     duration: const Duration(milliseconds: 1200),
+  //   );
+  //   _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+  //     CurvedAnimation(
+  //       parent: _animationController,
+  //       curve: Curves.easeIn,
+  //     ),
+  //   );
+  //   _animationController.forward();
+  // }
 
   @override
   void initState() {
@@ -250,6 +271,39 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
       ),
     );
     _animationController.forward();
+    _fetchApprovedNGOs();
+  }
+
+  Future<void> _fetchApprovedNGOs() async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('ngos')
+        .where('approved', isEqualTo: true)
+        .get();
+
+    List<Map<String, dynamic>> approvedNgos = [];
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final List<dynamic> acceptedDonations = data['acceptedDonations'] ?? [];
+
+      if (acceptedDonations.contains('Money')) {
+        approvedNgos.add({
+          'id': doc.id,
+          'ngoId': data['ngoId'], // Use this if you need the custom ID
+          'name': data['name'],
+        });
+      }
+    }
+
+    setState(() {
+      _ngos = approvedNgos;
+
+      if (_ngos.isNotEmpty) {
+        _selectedNgoId =
+            _ngos[0]['ngoId']; // or 'id' if you use Firestore doc ID
+        _selectedNgoName = _ngos[0]['name'];
+      }
+    });
   }
 
   @override
@@ -258,6 +312,41 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
+  // Future<void> _donate() async {
+  //   User? user = _auth.currentUser;
+  //   if (user == null) {
+  //     _showError("You must be logged in to donate.");
+  //     return;
+  //   }
+
+  //   final loadingDialog = showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (context) => const Center(
+  //       child: CircularProgressIndicator(
+  //         color: Color(0xFF00A86B),
+  //       ),
+  //     ),
+  //   );
+
+  //   try {
+  //     DocumentReference donationRef = FirebaseFirestore.instance.collection('donations').doc();
+
+  //     await donationRef.set({
+  //       'userId': user.uid,
+  //       'amount': _selectedAmount,
+  //       'cause': _selectedCause,
+  //       'timestamp': FieldValue.serverTimestamp(),
+  //     });
+
+  //     Navigator.pop(context); // Close loading dialog
+  //     _showConfirmation();
+  //   } catch (e) {
+  //     Navigator.pop(context); // Close loading dialog
+  //     _showError("Failed to process donation. Please try again.");
+  //   }
+  // }
+
   Future<void> _donate() async {
     User? user = _auth.currentUser;
     if (user == null) {
@@ -265,30 +354,33 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
       return;
     }
 
-    final loadingDialog = showDialog(
+    if (_selectedNgoId == null) {
+      _showError("Please select an NGO to donate to.");
+      return;
+    }
+
+    showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFF00A86B),
-        ),
+        child: CircularProgressIndicator(color: Color(0xFF00A86B)),
       ),
     );
 
     try {
-      DocumentReference donationRef = FirebaseFirestore.instance.collection('donations').doc();
-
-      await donationRef.set({
+      await FirebaseFirestore.instance.collection('donations').add({
         'userId': user.uid,
+        'ngoId': _selectedNgoId,
         'amount': _selectedAmount,
         'cause': _selectedCause,
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
+
       _showConfirmation();
     } catch (e) {
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
       _showError("Failed to process donation. Please try again.");
     }
   }
@@ -300,15 +392,15 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        title: Row(
+        title: const Row(
           children: [
             Icon(
               Icons.check_circle,
               color: const Color(0xFF00A86B),
               size: 28,
             ),
-            const SizedBox(width: 10),
-            const Text(
+            SizedBox(width: 10),
+            Text(
               "Donation Successful",
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
@@ -324,7 +416,7 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
             ),
             const SizedBox(height: 10),
             Text(
-              "You donated ₹$_selectedAmount to $_selectedCause.",
+              "Thank you for donating ₹$_selectedAmount to $_selectedNgoName for the cause: $_selectedCause.",
               style: TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 20),
@@ -412,7 +504,7 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    
+
     return Scaffold(
       body: FadeTransition(
         opacity: _fadeAnimation,
@@ -492,9 +584,9 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 60),
-              
+
               // Main content
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -516,12 +608,13 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: donationAmounts.length,
-                        itemBuilder: (context, index) => _buildAmountButton(donationAmounts[index]),
+                        itemBuilder: (context, index) =>
+                            _buildAmountButton(donationAmounts[index]),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 25),
-                    
+
                     // Choose cause section
                     const Text(
                       "Select a Cause",
@@ -532,13 +625,49 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
                       ),
                     ),
                     const SizedBox(height: 15),
-                    
+
                     // Causes list
                     for (var cause in donationCauses)
                       _buildCauseCard(cause["name"], cause["icon"]),
-                    
+
                     const SizedBox(height: 30),
-                    
+
+                    const SizedBox(height: 25),
+
+                    const Text(
+                      "Select an NGO",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF00A86B),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    DropdownButton<String>(
+                      value: _selectedNgoName,
+                      hint: const Text("Select NGO"),
+                      items: _ngos.map((ngo) {
+                        return DropdownMenuItem<String>(
+                          value: ngo['name'],
+                          child: Text(ngo['name']),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedNgoName = value;
+
+                          final selectedNgo = _ngos.firstWhere(
+                            (ngo) => ngo['name'] == value,
+                            orElse: () => {},
+                          );
+
+                          _selectedNgoId =
+                              selectedNgo['id']; // ✅ THIS is important
+                        });
+                      },
+                    ),
+
                     // Donate button
                     SizedBox(
                       width: double.infinity,
@@ -562,7 +691,7 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 30),
                   ],
                 ),
@@ -576,7 +705,7 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
 
   Widget _buildAmountButton(int amount) {
     bool isSelected = _selectedAmount == amount;
-    
+
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: GestureDetector(
@@ -588,7 +717,8 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
             color: isSelected ? const Color(0xFF00A86B) : Colors.white,
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
-              color: isSelected ? const Color(0xFF00A86B) : Colors.grey.shade300,
+              color:
+                  isSelected ? const Color(0xFF00A86B) : Colors.grey.shade300,
               width: 1.5,
             ),
             boxShadow: isSelected
@@ -619,7 +749,7 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
 
   Widget _buildCauseCard(String cause, IconData icon) {
     bool isSelected = _selectedCause == cause;
-    
+
     return GestureDetector(
       onTap: () => setState(() => _selectedCause = cause),
       child: AnimatedContainer(
@@ -627,7 +757,9 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
         margin: const EdgeInsets.only(bottom: 15),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00A86B).withOpacity(0.1) : Colors.grey.shade100,
+          color: isSelected
+              ? const Color(0xFF00A86B).withOpacity(0.1)
+              : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
             color: isSelected ? const Color(0xFF00A86B) : Colors.transparent,
@@ -672,7 +804,9 @@ class _DonateScreenState extends State<DonateScreen> with SingleTickerProviderSt
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: isSelected ? const Color(0xFF00A86B) : Colors.grey.shade700,
+                  color: isSelected
+                      ? const Color(0xFF00A86B)
+                      : Colors.grey.shade700,
                 ),
               ),
             ),

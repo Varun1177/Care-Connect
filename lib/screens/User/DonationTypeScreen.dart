@@ -164,20 +164,9 @@ class _DonationTypeScreenState extends State<DonationTypeScreen> with SingleTick
           bottomRight: Radius.circular(30),
         ),
       ),
-      child: Stack(
+      child: const Stack(
         children: [
-          Positioned(
-            top: 50,
-            left: 20,
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios,
-                color: Colors.white,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          const Positioned(
+           Positioned(
             top: 60,
             left: 0,
             right: 0,

@@ -1301,6 +1301,7 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> with Sing
 
   List<String> donationTypes = ['Money', 'Clothes', 'Books'];
   List<String> selectedDonations = [];
+  List<String> members = [];
 
   List<String> sectors = [
     'Health',
@@ -1351,7 +1352,7 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> with Sing
     super.dispose();
   }
 
-  void signUp() async {
+  Future<void> signUp() async {
     if (passwordController.text != confirmPasswordController.text) {
 
       try {
@@ -1378,6 +1379,7 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> with Sing
         'email': emailController.text.trim(),
         'role': 'ngo',
       });
+      
     } on FirebaseAuthException catch (e) {
       String errorMessage = "Signup failed!";
       if (e.code == 'email-already-in-use') {
@@ -1427,7 +1429,20 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> with Sing
     });
 
     try {
-      String ngoId = FirebaseFirestore.instance.collection('pending_approvals').doc().id;
+
+      try{
+        await signUp();
+      }
+      catch(e){
+        print("Error signing up: $e");
+        return;
+      }
+      
+      print("User ID: ${FirebaseAuth.instance.currentUser!.uid}");
+      String ngoId = FirebaseAuth.instance.currentUser!.uid;
+
+
+
 
       // Upload Logo
       String logoPath = 'ngos/$ngoId/logo.jpg';
@@ -1436,6 +1451,8 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> with Sing
       // Upload Document
       String docPath = 'ngos/$ngoId/document.pdf';
       String docUrl = await uploadFile(_document!, docPath);
+
+      try{
 
       await FirebaseFirestore.instance.collection('pending_approvals').doc(ngoId).set({
         'ngoId': ngoId,
@@ -1453,9 +1470,19 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen> with Sing
         'ifscCode': ifscController.text,
         'submittedAt': Timestamp.now(),
         'status': 'pending',
+        'members': members,
       });
 
-      signUp();
+      }
+      catch(e){
+        print("Error saving NGO data: $e");
+        return;
+      }
+            setState(() {
+      isLoading = true;
+    });
+
+    
 
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => NGODashboard()));
 

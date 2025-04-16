@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
    @override
    Widget build(BuildContext context) {
      return Scaffold(
-       appBar: AppBar(title: Text('Report Fraud & Complaints')),
+       appBar: AppBar(title: const Text('Report Fraud & Complaints')),
        body: const Center(
          child: Text(
            '⚠️ Report NGO Frauds & Issues',
