@@ -151,13 +151,13 @@ class _DonationTypeScreenState extends State<DonationTypeScreen> with SingleTick
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.25,
+      height: MediaQuery.of(context).size.height * 0.20,
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF00A86B), Color(0xFF009160)],
+          colors: [Color(0xFF00A86B), Color(0xFF00A86B)],
         ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
@@ -167,7 +167,7 @@ class _DonationTypeScreenState extends State<DonationTypeScreen> with SingleTick
       child: const Stack(
         children: [
            Positioned(
-            top: 60,
+            top: 40,
             left: 0,
             right: 0,
             child: Column(
@@ -176,7 +176,7 @@ class _DonationTypeScreenState extends State<DonationTypeScreen> with SingleTick
                   'Make a Difference',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 28,
+                    fontSize: 32,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -201,7 +201,13 @@ class _DonationTypeScreenState extends State<DonationTypeScreen> with SingleTick
       onTap: () {
         if (type == "Monetary") {
           Navigator.push(context, MaterialPageRoute(builder: (context) => DonateScreen()));
-        } else {
+        } else if(type == "Food") {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => NgoSelectionScreen(donationType: type)));
+        }
+        else if(type=="Books"){
+          Navigator.push(context, MaterialPageRoute(builder: (context) => NgoSelectionScreen(donationType: type)));
+        }
+        else if(type=="Clothes"){
           Navigator.push(context, MaterialPageRoute(builder: (context) => NgoSelectionScreen(donationType: type)));
         }
       },

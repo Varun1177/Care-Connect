@@ -25,7 +25,8 @@ dependencies {
 
 android {
     namespace = "com.example.care__connect"
-    compileSdk = flutter.compileSdkVersion
+    //compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

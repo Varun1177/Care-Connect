@@ -230,7 +230,7 @@ class _DonateScreenState extends State<DonateScreen>
   String? _selectedNgoId;
   String? _selectedNgoName;
 
-  List<Map<String, dynamic>> _ngoList = [];
+  //List<Map<String, dynamic>> _ngoList = [];
 
   final List<int> donationAmounts = [100, 500, 1000, 5000];
   final List<Map<String, dynamic>> donationCauses = [
@@ -240,22 +240,6 @@ class _DonateScreenState extends State<DonateScreen>
     {"name": "Women Empowerment", "icon": Icons.people},
     {"name": "Animal Welfare", "icon": Icons.pets}
   ];
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _animationController = AnimationController(
-  //     vsync: this,
-  //     duration: const Duration(milliseconds: 1200),
-  //   );
-  //   _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-  //     CurvedAnimation(
-  //       parent: _animationController,
-  //       curve: Curves.easeIn,
-  //     ),
-  //   );
-  //   _animationController.forward();
-  // }
 
   @override
   void initState() {
@@ -634,38 +618,42 @@ class _DonateScreenState extends State<DonateScreen>
 
                     const SizedBox(height: 25),
 
-                    const Text(
-                      "Select an NGO",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF00A86B),
+                    const Center(
+                      child: Text(
+                        "Select an NGO",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF00A86B),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
 
-                    DropdownButton<String>(
-                      value: _selectedNgoName,
-                      hint: const Text("Select NGO"),
-                      items: _ngos.map((ngo) {
-                        return DropdownMenuItem<String>(
-                          value: ngo['name'],
-                          child: Text(ngo['name']),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedNgoName = value;
-
-                          final selectedNgo = _ngos.firstWhere(
-                            (ngo) => ngo['name'] == value,
-                            orElse: () => {},
+                    Center(
+                      child: DropdownButton<String>(
+                        value: _selectedNgoName,
+                        hint: const Text("Select NGO"),
+                        items: _ngos.map((ngo) {
+                          return DropdownMenuItem<String>(
+                            value: ngo['name'],
+                            child: Text(ngo['name']),
                           );
-
-                          _selectedNgoId =
-                              selectedNgo['id']; // ✅ THIS is important
-                        });
-                      },
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedNgoName = value;
+                      
+                            final selectedNgo = _ngos.firstWhere(
+                              (ngo) => ngo['name'] == value,
+                              orElse: () => {},
+                            );
+                      
+                            _selectedNgoId =
+                                selectedNgo['id']; // ✅ THIS is important
+                          });
+                        },
+                      ),
                     ),
 
                     // Donate button

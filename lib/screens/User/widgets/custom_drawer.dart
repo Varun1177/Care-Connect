@@ -194,8 +194,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+//import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CustomDrawer extends StatefulWidget {
   final Function(int) onNavigate;
@@ -213,7 +212,7 @@ class CustomDrawer extends StatefulWidget {
 
 class _CustomDrawerState extends State<CustomDrawer> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  //final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   String userName = "Loading...";
   String userEmail = "Loading...";

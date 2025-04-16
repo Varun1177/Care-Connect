@@ -429,13 +429,13 @@ class _UserNGOListScreenState extends State<UserNGOListScreen> with SingleTicker
           children: [
             // Header with gradient background
             Container(
-              height: screenSize.height * 0.22,
+              height: screenSize.height * 0.12,
               width: double.infinity,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF00A86B), Color(0xFF009160)],
+                  colors: [Color(0xFF00A86B), Color(0xFF00A86B)],
                 ),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(30),

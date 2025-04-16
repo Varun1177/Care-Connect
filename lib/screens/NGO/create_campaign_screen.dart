@@ -2,10 +2,9 @@
 // import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
 
-
 // class CreateCampaignScreen extends StatefulWidget {
 //   const CreateCampaignScreen({super.key});
-  
+
 //   @override
 //   _CreateCampaignScreenState createState() => _CreateCampaignScreenState();
 // }
@@ -16,7 +15,7 @@
 //   final TextEditingController _purposeController = TextEditingController();
 //   final TextEditingController _descriptionController = TextEditingController();
 //   final TextEditingController _volunteersController = TextEditingController();
-  
+
 //   @override
 //   void dispose() {
 //     _purposeController.dispose();
@@ -24,7 +23,7 @@
 //     _volunteersController.dispose();
 //     super.dispose();
 //   }
-  
+
 //   Future<void> _pickDate() async {
 //     DateTime now = DateTime.now();
 //     final DateTime? picked = await showDatePicker(
@@ -39,7 +38,7 @@
 //       });
 //     }
 //   }
-  
+
 //   void _submitCampaign() async {
 //   if (_formKey.currentState!.validate() && _selectedDate != null) {
 //     try {
@@ -71,7 +70,6 @@
 //   }
 // }
 
-  
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
@@ -171,19 +169,22 @@
 //   }
 // }
 
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class CreateCampaignScreen extends StatefulWidget {
   const CreateCampaignScreen({super.key});
-  
+
   @override
   _CreateCampaignScreenState createState() => _CreateCampaignScreenState();
 }
 
-class _CreateCampaignScreenState extends State<CreateCampaignScreen> with SingleTickerProviderStateMixin {
+class _CreateCampaignScreenState extends State<CreateCampaignScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   DateTime? _selectedDate;
   final TextEditingController _purposeController = TextEditingController();
@@ -192,7 +193,9 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
   final TextEditingController _volunteersController = TextEditingController();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
+  File? _image;
+
   @override
   void initState() {
     super.initState();
@@ -208,7 +211,7 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
     );
     _animationController.forward();
   }
-  
+
   @override
   void dispose() {
     _purposeController.dispose();
@@ -217,7 +220,7 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
     _animationController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _pickDate() async {
     DateTime now = DateTime.now();
     final DateTime? picked = await showDatePicker(
@@ -249,10 +252,31 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
       });
     }
   }
-  
+
+  Future<void> _pickLogo() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String> _uploadFile(File file, String path) async {
+    try {
+      final ref = FirebaseStorage.instance.ref().child(path);
+      final uploadTask = ref.putFile(file);
+      final snapshot = await uploadTask.whenComplete(() => null);
+      return await snapshot.ref.getDownloadURL();
+    } catch (e) {
+      throw Exception('File upload failed: $e');
+    }
+  }
+
   void _submitCampaign() async {
     if (_formKey.currentState!.validate() && _selectedDate != null) {
-      final loadingDialog = showDialog(
+      showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(
@@ -261,9 +285,12 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
           ),
         ),
       );
-      
+
       try {
         final ngoId = FirebaseAuth.instance.currentUser!.uid;
+
+        String logoPath = 'ngos/$ngoId/logo.jpg';
+        String logoUrl = await _uploadFile(_image!, logoPath);
 
         await FirebaseFirestore.instance.collection('campaigns').add({
           'ngoId': ngoId,
@@ -273,12 +300,12 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
           'date': _selectedDate,
           'createdAt': Timestamp.now().toDate().toIso8601String(),
           'isClosed': false,
-          'image':"",
+          'image': logoUrl,
           'location': _locationController.text.trim(),
         });
 
         Navigator.pop(context); // Close loading dialog
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Campaign Created Successfully'),
@@ -304,11 +331,11 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
       );
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
@@ -330,10 +357,10 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
                     bottomRight: Radius.circular(50),
                   ),
                 ),
-                child: Stack(
+                child: const Stack(
                   children: [
-                    const Positioned(
-                      top: 50,
+                    Positioned(
+                      top: 90,
                       left: 0,
                       right: 0,
                       child: Column(
@@ -357,36 +384,10 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
                         ],
                       ),
                     ),
-                    Positioned(
-                      bottom: 10,
-                      left: 0,
-                      right: 0,
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.all(15),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 20,
-                                spreadRadius: 5,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.volunteer_activism,
-                            size: 50,
-                            color: Color(0xFF00A86B),
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 60),
+              const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 child: Form(
@@ -394,6 +395,26 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Center(
+                        child: Container(
+                          child: GestureDetector(
+                            onTap: _pickLogo,
+                            child: CircleAvatar(
+                              radius: 60,
+                              backgroundColor: Colors.grey.shade100,
+                              backgroundImage:
+                                  _image != null ? FileImage(_image!) : null,
+                              child: _image == null
+                                  ? const Icon(Icons.camera_alt,
+                                      size: 40, color: Color(0xFF00A86B))
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      ),
                       GestureDetector(
                         onTap: _pickDate,
                         child: Container(
@@ -402,7 +423,8 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
                             borderRadius: BorderRadius.circular(15),
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 20, horizontal: 15),
                             child: Row(
                               children: [
                                 const Icon(
@@ -416,7 +438,9 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
                                       : 'Date: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: _selectedDate == null ? Colors.grey.shade700 : Colors.black,
+                                    color: _selectedDate == null
+                                        ? Colors.grey.shade700
+                                        : Colors.black,
                                   ),
                                 ),
                               ],
@@ -429,14 +453,18 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
                         controller: _purposeController,
                         label: 'Campaign Purpose',
                         icon: Icons.edit_outlined,
-                        validator: (value) => (value == null || value.isEmpty) ? 'Please enter purpose' : null,
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Please enter purpose'
+                            : null,
                       ),
                       const SizedBox(height: 20),
                       buildInputField(
                         controller: _locationController,
                         label: 'Location',
                         icon: Icons.location_on_outlined,
-                        validator: (value) => (value == null || value.isEmpty) ? 'Please enter purpose' : null,
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Please enter purpose'
+                            : null,
                       ),
                       const SizedBox(height: 20),
                       Container(
@@ -446,15 +474,19 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
                         ),
                         child: TextFormField(
                           controller: _descriptionController,
-                          validator: (value) => (value == null || value.isEmpty) ? 'Please enter description' : null,
+                          validator: (value) => (value == null || value.isEmpty)
+                              ? 'Please enter description'
+                              : null,
                           maxLines: 5,
                           style: const TextStyle(fontSize: 16),
                           decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 20, horizontal: 15),
                             border: InputBorder.none,
                             hintText: 'Campaign Description',
                             prefixIcon: const Padding(
-                              padding: EdgeInsets.only(bottom: 80, left: 15, right: 15),
+                              padding: EdgeInsets.only(
+                                  bottom: 80, left: 15, right: 15),
                               child: Icon(
                                 Icons.description_outlined,
                                 color: Color(0xFF00A86B),
@@ -471,10 +503,10 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
                         label: 'Number of Volunteers Needed',
                         icon: Icons.people_outline,
                         keyboardType: TextInputType.number,
-                        validator: (value) => (value == null || value.isEmpty) 
-                            ? 'Please enter number of volunteers' 
-                            : (int.tryParse(value) == null) 
-                                ? 'Please enter a valid number' 
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Please enter number of volunteers'
+                            : (int.tryParse(value) == null)
+                                ? 'Please enter a valid number'
                                 : null,
                       ),
                       const SizedBox(height: 30),
@@ -511,7 +543,7 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> with Single
       ),
     );
   }
-  
+
   Widget buildInputField({
     required TextEditingController controller,
     required String label,
