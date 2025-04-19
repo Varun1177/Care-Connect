@@ -50,6 +50,10 @@ dependencies:
   lottie: ^3.2.0
   intl: ^0.20.2
   cached_network_image: ^3.4.1
+  location: ^7.0.1
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  flutter_geofire: ^2.0.4
 
 dev_dependencies:
   flutter_test:

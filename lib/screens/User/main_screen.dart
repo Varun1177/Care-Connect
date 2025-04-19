@@ -391,6 +391,7 @@ import 'package:care__connect/screens/User/user_ngo_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:care__connect/screens/User/widgets/custom_drawer.dart';
 import 'home_screen.dart';
+import 'package:care__connect/screens/User/widgets/join_status.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -441,13 +442,24 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       setState(() {
         _selectedIndex = index;
       });
-    } else if (index == 3) {
+      Navigator.pop(context);
+    } 
+
+    else if(index == 3){
+      Navigator.pop(context); // Close drawer
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => JoinStatusScreen()),
+      );
+    }
+    
+    else if (index == 4) {
       Navigator.pop(context); // Close drawer
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => ProfileScreen()),
       );
-    } else if (index == 4) {
+    } else if (index == 5) {
       // Settings
       Navigator.pop(context); // Close drawer
       Navigator.push(

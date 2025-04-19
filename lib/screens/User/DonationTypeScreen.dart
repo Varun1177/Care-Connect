@@ -54,6 +54,7 @@
 import 'package:flutter/material.dart';
 import 'NgoSelectionScreen.dart';
 import 'donate_screen.dart';
+import 'donation_detail.dart';
 
 class DonationTypeScreen extends StatefulWidget {
   @override
@@ -202,13 +203,13 @@ class _DonationTypeScreenState extends State<DonationTypeScreen> with SingleTick
         if (type == "Monetary") {
           Navigator.push(context, MaterialPageRoute(builder: (context) => DonateScreen()));
         } else if(type == "Food") {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => NgoSelectionScreen(donationType: type)));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => DonationDetailsScreen(donationType: type)));
         }
         else if(type=="Books"){
-          Navigator.push(context, MaterialPageRoute(builder: (context) => NgoSelectionScreen(donationType: type)));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => DonationDetailsScreen(donationType: type)));
         }
         else if(type=="Clothes"){
-          Navigator.push(context, MaterialPageRoute(builder: (context) => NgoSelectionScreen(donationType: type)));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => DonationDetailsScreen(donationType: type)));
         }
       },
       child: Container(
