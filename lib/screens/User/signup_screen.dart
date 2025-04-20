@@ -328,7 +328,6 @@ import 'package:care__connect/screens/User/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:care__connect/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:care__connect/screens/User/user_dashboard.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:care__connect/screens/login_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';

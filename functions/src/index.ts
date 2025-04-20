@@ -20,6 +20,7 @@ type NGOData = {
   latitude: number;
   longitude: number;
   acceptedDonations: string[];
+  fcmToken?: string; // optional
 };
 
 export const checkNearbyDonations = onDocumentCreated(
@@ -35,13 +36,7 @@ export const checkNearbyDonations = onDocumentCreated(
     const newDonation = snap.data() as DonationData;
     const {latitude, longitude, quantity, type} = newDonation;
 
-    console.log("Received donation data:", {
-      latitude,
-      longitude,
-      quantity,
-      type,
-    });
-
+    console.log("donation data:", {latitude, longitude, quantity, type});
 
     if (
       typeof latitude !== "number" ||
@@ -75,7 +70,6 @@ export const checkNearbyDonations = onDocumentCreated(
           {latitude: donation.latitude, longitude: donation.longitude},
           center
         );
-
         const distanceInKm = distanceInMeters / 1000;
 
         if (distanceInKm <= RADIUS_IN_KM && donation.type === type) {
@@ -112,34 +106,54 @@ export const checkNearbyDonations = onDocumentCreated(
           const distanceToNGOKm = distanceToNGO / 1000;
 
           if (distanceToNGOKm <= RADIUS_IN_KM) {
-            nearbyNGOs.push(ngo);
+            nearbyNGOs.push({...ngo, ngoId: doc.id});
           }
         });
 
         if (nearbyNGOs.length > 0) {
           const batch = db.batch();
 
-          nearbyNGOs.forEach((ngo) => {
+          await Promise.all(nearbyNGOs.map(async (ngo) => {
             const alertRef = db.collection("notifications").doc();
 
             batch.set(alertRef, {
               ngoId: ngo.ngoId,
-              message: `${type} donations in the area! organize a drive.`,
+              message: `${type} donations in the area! Organize a drive.`,
               location: center,
               timestamp: admin.firestore.FieldValue.serverTimestamp(),
             });
-          });
+
+            // ✅ Only send notification if fcmToken is valid
+            if (ngo.fcmToken) {
+              try {
+                await admin.messaging().send({
+                  notification: {
+                    title: `${type} donations in your area`,
+                    body: `high number of ${type} donations have been made. 
+Please consider organizing a drive!`,
+                  },
+                  token: ngo.fcmToken,
+                });
+                console.log(`✅ M message sent to NGO: ${ngo.ngoId}`);
+              } catch (error) {
+                console.error(`❌ Error sending M to NGO ${ngo.ngoId}:`, error);
+              }
+            } else {
+              console.warn(`⚠️ NGO ${ngo.ngoId} has no FCM token,
+                skipping notification.`);
+            }
+          }));
 
           await batch.commit();
-          console.log(`Notified ${nearbyNGOs.length} NGOs.`);
+          console.log(`✅ Notified ${nearbyNGOs.length} NGOs.`);
         } else {
-          console.log("No nearby NGOs found to notify.");
+          console.log("⚠️ No nearby NGOs found to notify.");
         }
       } else {
-        console.log(`Quantity ${totalQuantity} is below the threshold.`);
+        console.log(`ℹ️ Quantity ${totalQuantity} is below the threshold.`);
       }
     } catch (error) {
-      console.error("Error in checkNearbyDonations function:", error);
+      console.error("❌ Error in checkNearbyDonations function:", error);
     }
 
     return;

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:care__connect/services/auth_service.dart';
 import 'Admin/admin_dashboard.dart';
 
@@ -64,6 +65,19 @@ class _loginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
       await _auth.signInWithCredential(credential);
 
+      //store in users collection
+      print('User ID: ${_auth.currentUser!.uid}');
+      await FirebaseFirestore.instance
+              .collection('users')
+              .doc(_auth.currentUser!.uid)
+              .set({
+                'email': _auth.currentUser!.email,
+                'role': 'user',
+                'uid': _auth.currentUser!.uid,
+              }, SetOptions(merge: true));
+      // Check user role
+      print('success');
+
       String? role = (await AuthService().getUserRole(_auth.currentUser!.uid));
 
       if (role == 'admin') {
@@ -92,16 +106,6 @@ class _loginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       return;
     }
 
-    final loadingDialog = showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFF00A86B),
-        ),
-      ),
-    );
-
     try {
       await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -123,6 +127,8 @@ class _loginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           const SnackBar(content: Text('Error: User role not found')),
         );
       }
+      
+
     } catch (e) {
       Navigator.of(context).pop(); // Close loading dialog
       ScaffoldMessenger.of(context).showSnackBar(

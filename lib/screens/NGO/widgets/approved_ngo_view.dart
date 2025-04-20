@@ -79,7 +79,7 @@
 //     });
 
 //     fetchActiveCampaignsCount(widget.ngoData.id);
-    
+
 //     // Initialize animation controller
 //     _animationController = AnimationController(
 //       vsync: this,
@@ -276,7 +276,7 @@
 //                       ],
 //                     ),
 //                   ),
-                  
+
 //                   // Stats Summary Card
 //                   Positioned(
 //                     bottom: -60,
@@ -575,7 +575,7 @@
 //                     ],
 //                   ),
 //                   const SizedBox(height: 15),
-                  
+
 //                   // Activity cards
 //                   _buildActivityCard(
 //                     "New Donation Received",
@@ -887,6 +887,8 @@ import 'package:care__connect/screens/NGO/widgets/donation_details_screen.dart';
 import 'package:care__connect/screens/NGO/widgets/campaign_list_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:care__connect/screens/login_screen.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:care__connect/services/auth_service.dart';
 
 class ApprovedNGOView extends StatefulWidget {
   final DocumentSnapshot ngoData;
@@ -897,7 +899,8 @@ class ApprovedNGOView extends StatefulWidget {
   _ApprovedNGOViewState createState() => _ApprovedNGOViewState();
 }
 
-class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderStateMixin {
+class _ApprovedNGOViewState extends State<ApprovedNGOView>
+    with TickerProviderStateMixin {
   late TabController _tabController;
   late double totalDonations;
   late AnimationController _animationController;
@@ -911,7 +914,7 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     totalDonations = 0.0;
-    
+
     // Initialize animation controller
     _animationController = AnimationController(
       vsync: this,
@@ -923,7 +926,7 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
         curve: Curves.easeIn,
       ),
     );
-    
+
     _loadData();
     _animationController.forward();
   }
@@ -931,7 +934,7 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
   Future<void> _loadData() async {
     final amount = await fetchTotalDonationsForNgo(widget.ngoData.id);
     await fetchActiveCampaignsCount(widget.ngoData.id);
-    
+
     if (mounted) {
       setState(() {
         totalDonations = amount;
@@ -955,10 +958,10 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
 
   Future<void> fetchActiveCampaignsCount(String ngoId) async {
     QuerySnapshot snapshot = await FirebaseFirestore.instance
-      .collection('campaigns')
-      .where('ngoId', isEqualTo: widget.ngoData.id)
-      .where('isClosed', isEqualTo: false)
-      .get();
+        .collection('campaigns')
+        .where('ngoId', isEqualTo: widget.ngoData.id)
+        .where('isClosed', isEqualTo: false)
+        .get();
 
     if (mounted) {
       setState(() {
@@ -967,21 +970,53 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
     }
   }
 
-  Future<void> _signOut(BuildContext context) async {
+Future<void> _deleteFcmTokenForNGO() async {
+  final user = FirebaseAuth.instance.currentUser;
+
+  if (user != null) {
     try {
-      await FirebaseAuth.instance.signOut();
-      Navigator.pushReplacement(context, MaterialPageRoute(
-        builder: (context) => const LoginScreen(),
-      ));
+      await FirebaseFirestore.instance
+          .collection('ngos')
+          .doc(user.uid)
+          .update({'fcmToken': FieldValue.delete()});
+
+      debugPrint('🧹 FCM token deleted from ngos collection');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error signing out: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      debugPrint('❌ Error deleting FCM token for NGO: $e');
     }
   }
+}
+
+
+  void _signOut(BuildContext context) async {
+  final user = FirebaseAuth.instance.currentUser;
+
+  // Step 1: Sign out and navigate first
+  await FirebaseAuth.instance.signOut();
+
+  // Step 2: Navigate immediately
+  Navigator.of(context).pushAndRemoveUntil(
+    MaterialPageRoute(builder: (_) => const LoginScreen()),
+    (route) => false,
+  );
+
+  // Step 3: After navigation, delete the FCM token in background
+  Future.microtask(() async {
+    try {
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('ngos')
+            .doc(user.uid)
+            .update({'fcmToken': FieldValue.delete()});
+
+        debugPrint('🧹🧹🧹 FCM token deleted from ngos collection');
+      }
+    } catch (e) {
+      debugPrint('❌❌❌ Failed to delete FCM token: $e');
+    }
+  });
+}
+
 
   void _showSignOutDialog(BuildContext context) {
     showDialog(
@@ -1048,7 +1083,8 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic> data = widget.ngoData.data() as Map<String, dynamic>;
+    final Map<String, dynamic> data =
+        widget.ngoData.data() as Map<String, dynamic>;
     final String name = data['name'] ?? 'N/A';
     final String sector = data['sector'] ?? 'N/A';
     final String description = data['description'] ?? 'N/A';
@@ -1089,10 +1125,10 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
           children: [
             // Profile Banner
             _buildProfileBanner(name, sector, description, logoUrl),
-            
+
             // Stats Summary
             _buildStatsSummary(),
-            
+
             // Tab Bar
             Container(
               decoration: BoxDecoration(
@@ -1132,7 +1168,7 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
                 ],
               ),
             ),
-            
+
             // Tab Content
             Expanded(
               child: TabBarView(
@@ -1140,10 +1176,10 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
                 children: [
                   // Dashboard Tab
                   _buildDashboardTab(acceptedDonations),
-                  
+
                   // Campaigns Tab
                   _buildCampaignsTab(),
-                  
+
                   // Community Tab
                   _buildCommunityTab(),
                 ],
@@ -1248,7 +1284,8 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => DonationDetailsScreen(ngoId: widget.ngoData.id),
+                  builder: (context) =>
+                      DonationDetailsScreen(ngoId: widget.ngoData.id),
                 ),
               );
             },
@@ -1333,7 +1370,8 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
     );
   }
 
-  Widget _buildProfileBanner(String name, String sector, String description, String logoUrl) {
+  Widget _buildProfileBanner(
+      String name, String sector, String description, String logoUrl) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -1479,7 +1517,8 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => DonationDetailsScreen(ngoId: widget.ngoData.id),
+                  builder: (context) =>
+                      DonationDetailsScreen(ngoId: widget.ngoData.id),
                 ),
               );
             },
@@ -1493,7 +1532,8 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CampaignListScreen(ngoId: widget.ngoData.id),
+                  builder: (context) =>
+                      CampaignListScreen(ngoId: widget.ngoData.id),
                 ),
               );
             },
@@ -1509,7 +1549,8 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
     );
   }
 
-  Widget _buildStatItem(String value, String label, IconData icon, {VoidCallback? onTap}) {
+  Widget _buildStatItem(String value, String label, IconData icon,
+      {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -1574,9 +1615,9 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
             ),
             const SizedBox(height: 15),
             _buildQuickActions(),
-            
+
             const SizedBox(height: 25),
-            
+
             // Accepted Donations Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1593,7 +1634,8 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DonationDetailsScreen(ngoId: widget.ngoData.id),
+                        builder: (context) =>
+                            DonationDetailsScreen(ngoId: widget.ngoData.id),
                       ),
                     );
                   },
@@ -1610,9 +1652,9 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
             ),
             const SizedBox(height: 12),
             _buildAcceptedDonations(acceptedDonations),
-            
+
             const SizedBox(height: 25),
-            
+
             // Recent Activities Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1629,7 +1671,8 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => CampaignListScreen(ngoId: widget.ngoData.id),
+                        builder: (context) =>
+                            CampaignListScreen(ngoId: widget.ngoData.id),
                       ),
                     );
                   },
@@ -1646,7 +1689,7 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
             ),
             const SizedBox(height: 12),
             _buildRecentActivities(),
-            
+
             const SizedBox(height: 20),
           ],
         ),
@@ -1708,7 +1751,8 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => DonationDetailsScreen(ngoId: widget.ngoData.id),
+                  builder: (context) =>
+                      DonationDetailsScreen(ngoId: widget.ngoData.id),
                 ),
               );
             },
@@ -1803,10 +1847,11 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
       spacing: 10,
       runSpacing: 10,
       children: acceptedDonations.map<Widget>((type) {
-        final Map<String, dynamic> info = donationTypeInfo[type] ?? {
-          'icon': Icons.volunteer_activism,
-          'color': Colors.purple,
-        };
+        final Map<String, dynamic> info = donationTypeInfo[type] ??
+            {
+              'icon': Icons.volunteer_activism,
+              'color': Colors.purple,
+            };
 
         return Container(
           padding: const EdgeInsets.symmetric(
@@ -2015,7 +2060,8 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00A86B),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -2081,7 +2127,9 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
                   ),
                 ),
                 const SizedBox(height: 15),
-                ...activeCampaigns.map((doc) => _buildCampaignCard(doc, isActive: true)).toList(),
+                ...activeCampaigns
+                    .map((doc) => _buildCampaignCard(doc, isActive: true))
+                    .toList(),
                 const SizedBox(height: 25),
               ],
 
@@ -2095,7 +2143,9 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
                   ),
                 ),
                 const SizedBox(height: 15),
-                ...completedCampaigns.map((doc) => _buildCampaignCard(doc, isActive: false)).toList(),
+                ...completedCampaigns
+                    .map((doc) => _buildCampaignCard(doc, isActive: false))
+                    .toList(),
               ],
             ],
           ),
@@ -2148,9 +2198,11 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
                   alignment: Alignment.topRight,
                   child: Container(
                     margin: const EdgeInsets.all(10),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFF00A86B) : Colors.grey[600],
+                      color:
+                          isActive ? const Color(0xFF00A86B) : Colors.grey[600],
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -2234,7 +2286,9 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
                         value: progress,
                         backgroundColor: Colors.grey[200],
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          isActive ? const Color(0xFF00A86B) : Colors.grey[500]!,
+                          isActive
+                              ? const Color(0xFF00A86B)
+                              : Colors.grey[500]!,
                         ),
                         minHeight: 7,
                         borderRadius: BorderRadius.circular(10),
@@ -2264,7 +2318,9 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
                             // View campaign details
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isActive ? const Color(0xFF00A86B) : Colors.grey[600],
+                            backgroundColor: isActive
+                                ? const Color(0xFF00A86B)
+                                : Colors.grey[600],
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             shape: RoundedRectangleBorder(
@@ -2516,7 +2572,7 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView> with TickerProviderSt
             "Volunteer Coordinator",
             "https://randomuser.me/api/portraits/men/45.jpg",
           ),
-          
+
           const SizedBox(height: 15),
           Center(
             child: TextButton.icon(

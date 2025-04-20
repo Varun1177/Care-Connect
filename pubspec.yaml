@@ -41,7 +41,7 @@ dependencies:
   file_picker: ^8.3.1
   firebase_storage: ^12.4.1
   font_awesome_flutter: ^9.2.0
-  firebase_core: ^3.11.0
+  firebase_core: ^3.13.0
   image_picker: ^1.1.2
   url_launcher: ^6.3.1
   shared_preferences: ^2.5.2
@@ -54,6 +54,8 @@ dependencies:
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   flutter_geofire: ^2.0.4
+  firebase_messaging: ^15.2.5
+  flutter_launcher_icons: ^0.14.3
 
 dev_dependencies:
   flutter_test:
@@ -111,3 +113,11 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "lib/assets/logo2.png"
+  adaptive_icon_background: "#00000000" # Transparent background
+  adaptive_icon_foreground: "lib/assets/logo2.png"
+

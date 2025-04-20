@@ -2324,10 +2324,8 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen>
         context,
         MaterialPageRoute(builder: (_) => EmailVerificationCheckScreen()),
       );
-
-      return;
     }
-
+    print('storing 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀');
     // Store user info in Firestore
     await _firestore.collection('users').doc(user!.uid).set({
       'uid': user.uid,

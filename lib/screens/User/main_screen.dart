@@ -449,7 +449,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       Navigator.pop(context); // Close drawer
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => JoinStatusScreen()),
+        MaterialPageRoute(builder: (context) => ReportScreen()),
       );
     }
     
