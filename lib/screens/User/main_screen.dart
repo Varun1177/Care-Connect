@@ -384,6 +384,7 @@
 
 
 import 'package:care__connect/screens/User/DonationTypeScreen.dart';
+import 'package:care__connect/screens/User/nearest_ngo_screen.dart';
 import 'package:care__connect/screens/User/profile_screen.dart';
 import 'package:care__connect/screens/User/report_screen.dart';
 import 'package:care__connect/screens/User/setting_screen.dart';
@@ -465,6 +466,13 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => SettingsScreen()),
+      );
+    }
+    else if(index == 6){
+      Navigator.pop(context); // Close drawer
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => NearestNGOScreen()),
       );
     }
   }
