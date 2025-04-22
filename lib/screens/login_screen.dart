@@ -15,11 +15,13 @@ class LoginScreen extends StatefulWidget {
   _loginScreenState createState() => _loginScreenState();
 }
 
-class _loginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _loginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _obscureText = true;
   bool _rememberMe = true;
   late AnimationController _animationController;
@@ -56,7 +58,8 @@ class _loginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         return;
       }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -65,31 +68,48 @@ class _loginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
       await _auth.signInWithCredential(credential);
 
-      //store in users collection
-      print('User ID: ${_auth.currentUser!.uid}');
-      await FirebaseFirestore.instance
-              .collection('users')
-              .doc(_auth.currentUser!.uid)
-              .set({
-                'email': _auth.currentUser!.email,
-                'role': 'user',
-                'uid': _auth.currentUser!.uid,
-              }, SetOptions(merge: true));
-      // Check user role
-      print('success');
+      QuerySnapshot donationSnapshot = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'admin')
+          .where('uid', isEqualTo: _auth.currentUser!.uid)
+          .get();
+      if (donationSnapshot.docs.isNotEmpty) {
+        // User is an admin
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => AdminDashboard()));
+      } else {
+        // User is not an admin
 
-      String? role = (await AuthService().getUserRole(_auth.currentUser!.uid));
+        //store in users collection
+        print('User ID: ${_auth.currentUser!.uid}');
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(_auth.currentUser!.uid)
+            .set({
+          'email': _auth.currentUser!.email,
+          'role': 'user',
+          'uid': _auth.currentUser!.uid,
+        }, SetOptions(merge: true));
+        // Check user role
+        print('success');
 
-      if (role == 'admin') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => AdminDashboard()));
-      } else if (role == 'user') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
-      } else if (role == 'ngo') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => NGODashboard()));
-      } else if (role == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: User role not found')),
-        );
+        String? role =
+            (await AuthService().getUserRole(_auth.currentUser!.uid));
+
+        if (role == 'admin') {
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => AdminDashboard()));
+        } else if (role == 'user') {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => MainScreen()));
+        } else if (role == 'ngo') {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => NGODashboard()));
+        } else if (role == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: User role not found')),
+          );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -99,7 +119,8 @@ class _loginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   Future<void> _signInWithEmail(BuildContext context) async {
-    if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+    if (_emailController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
       );
@@ -114,21 +135,34 @@ class _loginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
       String? role = (await AuthService().getUserRole(_auth.currentUser!.uid));
 
+      print("😳😳😳: $role");
+
       Navigator.pop(context); // Close loading dialog
 
       if (role == 'admin') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => AdminDashboard()));
+        Future.delayed(Duration.zero,(){
+          Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => AdminDashboard()));
+        });
       } else if (role == 'user') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
+        // Navigator.pushReplacement(
+        //     context, MaterialPageRoute(builder: (context) => MainScreen()));
+        Future.delayed(Duration.zero,(){
+          Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => MainScreen()));
+        });
       } else if (role == 'ngo') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => NGODashboard()));
+        // Navigator.pushReplacement(
+        //     context, MaterialPageRoute(builder: (context) => NGODashboard()));
+        Future.delayed(Duration.zero,(){
+          Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => NGODashboard()));
+        });
       } else if (role == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error: User role not found')),
         );
       }
-      
-
     } catch (e) {
       Navigator.of(context).pop(); // Close loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
@@ -140,7 +174,7 @@ class _loginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
@@ -370,7 +404,7 @@ class _loginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color:  Color(0xFF00A86B),
+                color: Color(0xFF00A86B),
               ),
             ),
           ),
