@@ -8,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:care__connect/services/auth_service.dart';
 import 'Admin/admin_dashboard.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -93,6 +94,8 @@ class _loginScreenState extends State<LoginScreen>
         // Check user role
         print('success');
 
+        _setupFCM(); // Call the FCM setup function
+
         String? role =
             (await AuthService().getUserRole(_auth.currentUser!.uid));
 
@@ -118,59 +121,169 @@ class _loginScreenState extends State<LoginScreen>
     }
   }
 
-  Future<void> _signInWithEmail(BuildContext context) async {
-    if (_emailController.text.trim().isEmpty ||
-        _passwordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
+  // Future<void> _signInWithEmail(BuildContext context) async {
+  //   if (_emailController.text.trim().isEmpty ||
+  //       _passwordController.text.trim().isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Please fill in all fields')),
+  //     );
+  //     return;
+  //   }
+
+  //   try {
+  //     await _auth.signInWithEmailAndPassword(
+  //       email: _emailController.text.trim(),
+  //       password: _passwordController.text.trim(),
+  //     );
+
+  //     String? role = (await AuthService().getUserRole(_auth.currentUser!.uid));
+
+  //     print("😳😳😳: $role");
+
+  //     Navigator.pop(context); // Close loading dialog
+  //     if (role == 'admin') {
+  //       Future.delayed(Duration.zero,(){
+  //         Navigator.pushReplacement(
+  //           context, MaterialPageRoute(builder: (context) => AdminDashboard()));
+  //       });
+  //     } else if (role == 'user') {
+  //       // Navigator.pushReplacement(
+  //       //     context, MaterialPageRoute(builder: (context) => MainScreen()));
+  //       Future.delayed(Duration.zero,(){
+  //         Navigator.pushReplacement(
+  //           context, MaterialPageRoute(builder: (context) => MainScreen()));
+  //       });
+  //     } else if (role == 'ngo') {
+  //       // Navigator.pushReplacement(
+  //       //     context, MaterialPageRoute(builder: (context) => NGODashboard()));
+  //       Future.delayed(Duration.zero,(){
+  //         Navigator.pushReplacement(
+  //           context, MaterialPageRoute(builder: (context) => NGODashboard()));
+  //       });
+  //     } else if (role == null) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Error: User role not found')),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     Navigator.of(context).pop(); // Close loading dialog
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Login Failed: ${e.toString()}')),
+  //     );
+  //   }
+  // }
+
+
+
+  void _setupFCM() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission();
+    String? token = await messaging.getToken();
+    print("✅ FCM Token: $token");
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && token != null) {
+      final role = await AuthService().getUserRole(user.uid);
+
+      try {
+        if (role == 'user') {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .set({'fcmToken': token}, SetOptions(merge: true));
+          print("📝 Token saved to users collection");
+        } else if (role == 'ngo') {
+          final ngoSnap = await FirebaseFirestore.instance
+              .collection('ngos')
+              .where('email', isEqualTo: user.email)
+              .limit(1)
+              .get();
+
+          if (ngoSnap.docs.isNotEmpty) {
+            await ngoSnap.docs.first.reference.set({'fcmToken': token}, SetOptions(merge: true));
+            print("📝 Token saved to ngos collection");
+          }
+        }
+      } catch (e) {
+        print("❌ Error saving FCM token: $e");
+      }
     }
 
-    try {
-      await _auth.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print("📲 Foreground message: ${message.notification?.title}");
+      if (message.notification != null && context.mounted) {
+        final snackBar = SnackBar(
+          content: Text("${message.notification!.title}: ${message.notification!.body}"),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      }
+    });
 
-      String? role = (await AuthService().getUserRole(_auth.currentUser!.uid));
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      if (message != null) {
+        print("📥 App opened via notification: ${message.notification?.title}");
+      }
+    });
 
-      print("😳😳😳: $role");
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print("📤 Notification tapped while in background: ${message.notification?.title}");
+    });
+  }
 
+Future<void> _signInWithEmail(BuildContext context) async {
+  if (_emailController.text.trim().isEmpty ||
+      _passwordController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please fill in all fields')),
+    );
+    return;
+  }
 
-      Navigator.pop(context); // Close loading dialog
+  try {
+    await _auth.signInWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
 
+    String? role = await AuthService().getUserRole(_auth.currentUser!.uid);
+
+    _setupFCM(); // Call the FCM setup function
+
+    print("😳😳😳: $role");
+
+    // Safely wait before navigating to avoid locking Navigator
+    Future.delayed(Duration.zero, () {
+      //Navigator.pop(context); // Close loading dialog
       if (role == 'admin') {
-        Future.delayed(Duration.zero,(){
-          Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => AdminDashboard()));
-        });
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AdminDashboard()),
+        );
       } else if (role == 'user') {
-        // Navigator.pushReplacement(
-        //     context, MaterialPageRoute(builder: (context) => MainScreen()));
-        Future.delayed(Duration.zero,(){
-          Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => MainScreen()));
-        });
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainScreen()),
+        );
       } else if (role == 'ngo') {
-        // Navigator.pushReplacement(
-        //     context, MaterialPageRoute(builder: (context) => NGODashboard()));
-        Future.delayed(Duration.zero,(){
-          Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => NGODashboard()));
-        });
-      } else if (role == null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => NGODashboard()),
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error: User role not found')),
         );
       }
-    } catch (e) {
+    });
+  } catch (e) {
+    Future.delayed(Duration.zero, () {
       Navigator.of(context).pop(); // Close loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login Failed: ${e.toString()}')),
       );
-    }
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
