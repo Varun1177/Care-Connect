@@ -2283,21 +2283,14 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen>
     });
   }
 
-  Future<void> signUp() async {
+  Future<User?> signUp() async {
   if (passwordController.text != confirmPasswordController.text) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Passwords do not match")),
-    );
-    return;
+    throw Exception("Passwords do not match");
   }
 
-  setState(() {
-    isLoading = true;
-  });
-
   try {
-    // Create the user
-    UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+    UserCredential userCredential =
+        await _auth.createUserWithEmailAndPassword(
       email: emailController.text.trim(),
       password: passwordController.text.trim(),
     );
@@ -2308,46 +2301,30 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen>
       await user.updateDisplayName(personNameController.text.trim());
       await user.reload();
       user = _auth.currentUser;
+
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();
+      }
+
+      await _firestore.collection('users').doc(user!.uid).set({
+        'uid': user.uid,
+        'email': user.email,
+        'role': 'ngo',
+      });
     }
 
-    if (user != null && !user.emailVerified) {
-      await user.sendEmailVerification();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("A verification email has been sent. Please verify your email."),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => EmailVerificationCheckScreen()),
-      );
-    }
-    print('storing 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀');
-    // Store user info in Firestore
-    await _firestore.collection('users').doc(user!.uid).set({
-      'uid': user.uid,
-      'email': emailController.text.trim(),
-      'role': 'ngo',
-    });
-
+    return user;
   } on FirebaseAuthException catch (e) {
-    String errorMessage = "Signup failed!";
     if (e.code == 'email-already-in-use') {
-      errorMessage = "Email already in use!";
+      throw Exception("Email already in use!");
     } else if (e.code == 'weak-password') {
-      errorMessage = "Password is too weak!";
+      throw Exception("Password is too weak!");
+    } else {
+      throw Exception("Signup failed!");
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
   }
-
-  setState(() {
-    isLoading = false;
-  });
 }
+
 
   Future<void> _pickLogo() async {
     final pickedFile =
@@ -2369,105 +2346,103 @@ class _NGORegistrationScreenState extends State<NGORegistrationScreen>
   }
 
   void registerNGO() async {
-    if (_document == null || _logo == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please upload both logo and document"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (_currentLocation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select a location on the map"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      try {
-        await signUp();
-      } catch (e) {
-        print("Error signing up: $e");
-        return;
-      }
-
-      print("User ID: ${FirebaseAuth.instance.currentUser!.uid}");
-      String ngoId = FirebaseAuth.instance.currentUser!.uid;
-
-      // Upload Logo
-      String logoPath = 'ngos/$ngoId/logo.jpg';
-      String logoUrl = await uploadFile(_logo!, logoPath);
-
-      // Upload Document
-      String docPath = 'ngos/$ngoId/document.pdf';
-      String docUrl = await uploadFile(_document!, docPath);
-
-      try {
-        await FirebaseFirestore.instance
-            .collection('pending_approvals')
-            .doc(ngoId)
-            .set({
-          'ngoId': ngoId,
-          'name': ngoNameController.text,
-          'city': cityController.text,
-          'email': emailController.text,
-          'sector': selectedSector,
-          'description': descriptionController.text,
-          'personName': personNameController.text,
-          'personRole': personRoleController.text,
-          'acceptedDonations': selectedDonations,
-          'logoUrl': logoUrl,
-          'documentUrl': docUrl,
-          'bankAccount': accountNumberController.text,
-          'ifscCode': ifscController.text,
-          'submittedAt': Timestamp.now(),
-          'status': 'pending',
-          'members': members,
-          'latitude': _currentLocation!.latitude,
-          'longitude': _currentLocation!.longitude,
-        });
-      } catch (e) {
-        print("Error saving NGO data: $e");
-        return;
-      }
-
-      setState(() {
-        isLoading = true;
-      });
-
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => NGODashboard()));
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Registration submitted for approval"),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      print("Error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Error submitting registration"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-
-    setState(() {
-      isLoading = false;
-    });
+  if (_document == null || _logo == null) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Please upload both logo and document"),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
   }
+
+  if (_currentLocation == null) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Please select a location on the map"),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  setState(() {
+    isLoading = true;
+  });
+
+  try {
+    // 🔐 Signup user
+    final user = await signUp();
+
+    if (!context.mounted) return;
+
+    final ngoId = user!.uid;
+
+    // 📤 Upload logo
+    final logoUrl = await uploadFile(_logo!, 'ngos/$ngoId/logo.jpg');
+
+    // 📤 Upload document
+    final docUrl = await uploadFile(_document!, 'ngos/$ngoId/document.pdf');
+
+    // 📝 Store to Firestore
+    await FirebaseFirestore.instance
+        .collection('pending_approvals')
+        .doc(ngoId)
+        .set({
+      'ngoId': ngoId,
+      'name': ngoNameController.text,
+      'city': cityController.text,
+      'email': emailController.text,
+      'sector': selectedSector,
+      'description': descriptionController.text,
+      'personName': personNameController.text,
+      'personRole': personRoleController.text,
+      'acceptedDonations': selectedDonations,
+      'logoUrl': logoUrl,
+      'documentUrl': docUrl,
+      'bankAccount': accountNumberController.text,
+      'ifscCode': ifscController.text,
+      'submittedAt': Timestamp.now(),
+      'status': 'pending',
+      'members': members,
+      'latitude': _currentLocation!.latitude,
+      'longitude': _currentLocation!.longitude,
+    });
+
+    if (!context.mounted) return;
+
+    // ✅ Show success and navigate
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("A verification email has been sent. Please verify your email."),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => EmailVerificationCheckScreen()),
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(e.toString().replaceAll("Exception: ", "")),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  if (!context.mounted) return;
+
+  setState(() {
+    isLoading = false;
+  });
+}
+
 
   Future<String> uploadFile(File file, String path) async {
     final ref = FirebaseStorage.instance.ref().child(path);
