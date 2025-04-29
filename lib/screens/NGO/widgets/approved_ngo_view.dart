@@ -2686,7 +2686,9 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView>
   late Animation<double> _fadeAnimation;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int activeCampaignsCount = 0;
-  int supportersCount = 184;
+  int supportersCount = 0;
+  List<TeamMember> teamMembers = [];
+  bool isLoading = true; // Add this variable to track loading state
 
   late Stream<QuerySnapshot> _activitiesStream;
   List<Map<String, dynamic>> _recentActivities = [];
@@ -2899,16 +2901,22 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView>
     }
   }
 
-  Future<void> _loadData() async {
-    final amount = await fetchTotalDonationsForNgo(widget.ngoData.id);
-    await fetchActiveCampaignsCount(widget.ngoData.id);
+Future<void> _loadData() async {
+  setState(() {
+    isLoading = true; // Explicitly set to true at the beginning
+  });
+  
+  final amount = await fetchTotalDonationsForNgo(widget.ngoData.id);
+  await fetchActiveCampaignsCount(widget.ngoData.id);
+  await fetchSupporterCountAndMembers(widget.ngoData.id);
 
-    if (mounted) {
-      setState(() {
-        totalDonations = amount;
-      });
-    }
+  if (mounted) {
+    setState(() {
+      totalDonations = amount;
+      isLoading = false;
+    });
   }
+}
 
   Future<double> fetchTotalDonationsForNgo(String ngoId) async {
     double totalAmount = 0.0;
@@ -2922,6 +2930,48 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView>
     }
 
     return totalAmount;
+  }
+
+  Future<void> fetchSupporterCountAndMembers(String ngoId) async {
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('ngos')
+          .where('ngoId', isEqualTo: ngoId)
+          .get();
+
+      int membersCount = 0;
+      List<TeamMember> loadedMembers = [];
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final List<dynamic>? members = data['members'] as List<dynamic>?;
+
+        if (members != null) {
+          membersCount += members.length;
+
+          for (String uid in members) {
+            DocumentSnapshot userDoc = await FirebaseFirestore.instance
+                .collection('user_data')
+                .doc(uid)
+                .get();
+
+            if (userDoc.exists) {
+              loadedMembers.add(
+                  TeamMember.fromMap(userDoc.data() as Map<String, dynamic>));
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          supportersCount = membersCount;
+          teamMembers = loadedMembers;
+        });
+      }
+    } catch (e) {
+      print("❌ Error fetching members and count: $e");
+    }
   }
 
   Future<void> fetchActiveCampaignsCount(String ngoId) async {
@@ -4194,7 +4244,7 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView>
     final data = doc.data() as Map<String, dynamic>;
     final String title = data['title'] ?? 'Campaign';
     final String description = data['description'] ?? 'No description';
-    final String imageUrl = data['imageUrl'] ?? '';
+    final String imageUrl = data['image'] ?? '';
     final double goal = double.tryParse(data['goal'].toString()) ?? 0.0;
     final double raised = double.tryParse(data['raised'].toString()) ?? 0.0;
     final double progress = goal > 0 ? (raised / goal).clamp(0.0, 1.0) : 0.0;
@@ -4490,7 +4540,7 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView>
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text("View All Requests"),
+                  child: const Text("View Requests"),
                 ),
               ],
             ),
@@ -4590,24 +4640,17 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView>
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 15),
-
-          // Sample team members
-          _buildTeamMemberCard(
-            "Rahul Sharma",
-            "Administrator",
-            "https://randomuser.me/api/portraits/men/32.jpg",
-          ),
-          _buildTeamMemberCard(
-            "Priya Patel",
-            "Campaign Manager",
-            "https://randomuser.me/api/portraits/women/44.jpg",
-          ),
-          _buildTeamMemberCard(
-            "Amit Kumar",
-            "Volunteer Coordinator",
-            "https://randomuser.me/api/portraits/men/45.jpg",
-          ),
+          const SizedBox(height: 15),// Ensure this variable is now defined
+            if (isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (teamMembers.isEmpty)
+              const Center(child: Text("No team members yet."))
+            else
+              ...teamMembers.map((member) => _buildTeamMemberCard(
+                    member.name,
+                    member.email,
+                    member.photoUrl,
+                  )),
 
           const SizedBox(height: 15),
           Center(
@@ -4691,6 +4734,26 @@ class _ApprovedNGOViewState extends State<ApprovedNGOView>
           ),
         ],
       ),
+    );
+  }
+}
+
+class TeamMember {
+  final String name;
+  final String email;
+  final String photoUrl;
+
+  TeamMember({
+    required this.name,
+    required this.email,
+    required this.photoUrl,
+  });
+
+  factory TeamMember.fromMap(Map<String, dynamic> data) {
+    return TeamMember(
+      name: data['name'] ?? '',
+      email: data['email'] ?? '',
+      photoUrl: data['profileImageUrl'] ?? '',
     );
   }
 }

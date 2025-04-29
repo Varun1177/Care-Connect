@@ -715,7 +715,7 @@ class _NearestNGOScreenState extends State<NearestNGOScreen> with SingleTickerPr
               Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),

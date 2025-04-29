@@ -393,6 +393,11 @@ import 'package:flutter/material.dart';
 import 'package:care__connect/screens/User/widgets/custom_drawer.dart';
 import 'home_screen.dart';
 import 'package:care__connect/screens/User/widgets/join_status.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:care__connect/services/auth_service.dart';
+import 'package:care__connect/screens/login_screen.dart';
+
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -436,6 +441,54 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  void _signOut(BuildContext context) async {
+      final user = FirebaseAuth.instance.currentUser;
+
+      // Step 1: Sign out the user
+      
+      await AuthService().signOut();
+
+      // Step 2: Navigate to LoginScreen immediately
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+
+      // Step 3: Delete FCM token in the background
+      Future.microtask(() async {
+        try {
+          if (user != null) {
+            final role = await AuthService().getUserRole(user.uid);
+
+            if (role == 'user') {
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .update({
+                'fcmToken': FieldValue.delete(),
+              });
+              debugPrint('🧹 Deleted FCM token for user');
+            } else if (role == 'ngo') {
+              final ngoSnap = await FirebaseFirestore.instance
+                  .collection('ngos')
+                  .where('email', isEqualTo: user.email)
+                  .limit(1)
+                  .get();
+
+              if (ngoSnap.docs.isNotEmpty) {
+                await ngoSnap.docs.first.reference.update({
+                  'fcmToken': FieldValue.delete(),
+                });
+                debugPrint('🧹 Deleted FCM token for NGO');
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('❌ Error deleting FCM token: $e');
+        }
+      });
+    }
+
   // Navigation from drawer
   void navigateFromDrawer(int index) {
     if (index < 3) {
@@ -450,7 +503,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       Navigator.pop(context); // Close drawer
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => ReportScreen()),
+        MaterialPageRoute(builder: (context) => JoinStatusScreen()),
       );
     }
     
@@ -460,15 +513,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         context,
         MaterialPageRoute(builder: (context) => ProfileScreen()),
       );
-    } else if (index == 5) {
-      // Settings
-      Navigator.pop(context); // Close drawer
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => SettingsScreen()),
-      );
+    } else if (index == 6) {
+      _signOut(context);
     }
-    else if(index == 6){
+    else if(index == 5){
       Navigator.pop(context); // Close drawer
       Navigator.push(
         context,

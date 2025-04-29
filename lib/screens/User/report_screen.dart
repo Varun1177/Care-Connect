@@ -315,7 +315,7 @@ class _ReportScreenState extends State<ReportScreen>
     _animationController.forward();
 
     if (_interactedNgos.isNotEmpty) {
-      _selectedNgoId = _interactedNgos[0]['ngoId'];
+      _selectedNgoId = _interactedNgos[0]['id'];
       _selectedNgoName = _interactedNgos[0]['name'];
     }
 
@@ -354,7 +354,7 @@ class _ReportScreenState extends State<ReportScreen>
 
       if (_interactedNgos.isNotEmpty) {
         _selectedNgoId =
-            _interactedNgos[0]['ngoId']; // or 'id' if you use Firestore doc ID
+            _interactedNgos[0]['id']; // or 'id' if you use Firestore doc ID
         _selectedNgoName = _interactedNgos[0]['name'];
       }
     });
@@ -550,12 +550,12 @@ class _ReportScreenState extends State<ReportScreen>
                               setState(() {
                                 _selectedNgoId = newNgoId;
                                 _selectedNgoName = _interactedNgos.firstWhere(
-                                    (ngo) => ngo['ngoId'] == newNgoId)['name'];
+                                    (ngo) => ngo['id'] == newNgoId)['name'];
                               });
                             },
                             items: _interactedNgos.map((ngo) {
                               return DropdownMenuItem<String>(
-                                value: ngo['ngoId'],
+                                value: ngo['id'],
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
                                       vertical: 15.0),

@@ -121,6 +121,193 @@ class _loginScreenState extends State<LoginScreen>
     }
   }
 
+  Future<void> _resetPassword(BuildContext context) async {
+    final emailController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Reset Password',
+            style: TextStyle(
+              color: Color(0xFF00A86B),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(fontSize: 16),
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 15,
+                  horizontal: 15,
+                ),
+                border: InputBorder.none,
+                hintText: 'Enter your email',
+                prefixIcon: const Icon(
+                  Icons.email_outlined,
+                  color: Color(0xFF00A86B),
+                ),
+                hintStyle: TextStyle(color: Colors.grey.shade700),
+              ),
+            ),
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          side: BorderSide(
+                            color: Colors.grey.shade300,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final email = emailController.text.trim();
+                        if (email.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter your email'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        try {
+                          // Show loading indicator
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (BuildContext context) {
+                              return const Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Color(0xFF00A86B)),
+                                ),
+                              );
+                            },
+                          );
+
+                          await FirebaseAuth.instance
+                              .sendPasswordResetEmail(email: email);
+
+                          // Close loading indicator and dialog
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pop();
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                      'Password reset email sent successfully!'),
+                                ],
+                              ),
+                              backgroundColor: Color(0xFF00A86B),
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
+                        } catch (e) {
+                          // Close loading indicator
+                          Navigator.of(context).pop();
+
+                          String errorMessage =
+                              'Failed to send password reset email.';
+                          if (e.toString().contains('user-not-found')) {
+                            errorMessage =
+                                'No user found with this email address.';
+                          } else if (e.toString().contains('invalid-email')) {
+                            errorMessage =
+                                'Please enter a valid email address.';
+                          }
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(errorMessage),
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00A86B),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      child: const Text(
+                        'Send',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // Future<void> _signInWithEmail(BuildContext context) async {
   //   if (_emailController.text.trim().isEmpty ||
   //       _passwordController.text.trim().isEmpty) {
@@ -173,8 +360,6 @@ class _loginScreenState extends State<LoginScreen>
   //   }
   // }
 
-
-
   void _setupFCM() async {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
     await messaging.requestPermission();
@@ -200,7 +385,8 @@ class _loginScreenState extends State<LoginScreen>
               .get();
 
           if (ngoSnap.docs.isNotEmpty) {
-            await ngoSnap.docs.first.reference.set({'fcmToken': token}, SetOptions(merge: true));
+            await ngoSnap.docs.first.reference
+                .set({'fcmToken': token}, SetOptions(merge: true));
             print("📝 Token saved to ngos collection");
           }
         }
@@ -213,77 +399,81 @@ class _loginScreenState extends State<LoginScreen>
       print("📲 Foreground message: ${message.notification?.title}");
       if (message.notification != null && context.mounted) {
         final snackBar = SnackBar(
-          content: Text("${message.notification!.title}: ${message.notification!.body}"),
+          content: Text(
+              "${message.notification!.title}: ${message.notification!.body}"),
         );
         ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
     });
 
-    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+    FirebaseMessaging.instance
+        .getInitialMessage()
+        .then((RemoteMessage? message) {
       if (message != null) {
         print("📥 App opened via notification: ${message.notification?.title}");
       }
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print("📤 Notification tapped while in background: ${message.notification?.title}");
+      print(
+          "📤 Notification tapped while in background: ${message.notification?.title}");
     });
   }
 
-Future<void> _signInWithEmail(BuildContext context) async {
-  if (_emailController.text.trim().isEmpty ||
-      _passwordController.text.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please fill in all fields')),
-    );
-    return;
-  }
-
-  try {
-    await _auth.signInWithEmailAndPassword(
-      email: _emailController.text.trim(),
-      password: _passwordController.text.trim(),
-    );
-
-    String? role = await AuthService().getUserRole(_auth.currentUser!.uid);
-
-    _setupFCM(); // Call the FCM setup function
-
-    print("😳😳😳: $role");
-
-    // Safely wait before navigating to avoid locking Navigator
-    Future.delayed(Duration.zero, () {
-      //Navigator.pop(context); // Close loading dialog
-      if (role == 'admin') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => AdminDashboard()),
-        );
-      } else if (role == 'user') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
-        );
-      } else if (role == 'ngo') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => NGODashboard()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: User role not found')),
-        );
-      }
-    });
-  } catch (e) {
-    Future.delayed(Duration.zero, () {
-      Navigator.of(context).pop(); // Close loading dialog
+  Future<void> _signInWithEmail(BuildContext context) async {
+    if (_emailController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login Failed: ${e.toString()}')),
+        const SnackBar(content: Text('Please fill in all fields')),
       );
-    });
+      return;
+    }
+
+    try {
+      await _auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      String? role = await AuthService().getUserRole(_auth.currentUser!.uid);
+
+      _setupFCM(); // Call the FCM setup function
+
+      print("😳😳😳: $role");
+
+      // Safely wait before navigating to avoid locking Navigator
+      Future.delayed(Duration.zero, () {
+        //Navigator.pop(context); // Close loading dialog
+        if (role == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AdminDashboard()),
+          );
+        } else if (role == 'user') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MainScreen()),
+          );
+        } else if (role == 'ngo') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => NGODashboard()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: User role not found')),
+          );
+        }
+      });
+    } catch (e) {
+      Future.delayed(Duration.zero, () {
+        Navigator.of(context).pop(); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login Failed: ${e.toString()}')),
+        );
+      });
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -512,7 +702,7 @@ Future<void> _signInWithEmail(BuildContext context) async {
             ],
           ),
           TextButton(
-            onPressed: () {},
+            onPressed: () => _resetPassword(context),
             child: const Text(
               'Forgot Password?',
               style: TextStyle(

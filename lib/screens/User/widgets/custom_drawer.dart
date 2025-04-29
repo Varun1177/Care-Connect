@@ -138,8 +138,9 @@ class _CustomDrawerState extends State<CustomDrawer> {
               // Profile and Settings are now separate items
               _buildNavItem(3, 'Join Status', Icons.check_circle),
               _buildNavItem(4, 'My Profile', Icons.person),
-              _buildNavItem(5, 'Settings', Icons.settings),
-              _buildNavItem(6, 'Find Nearest NGO', Icons.location_pin),
+              _buildNavItem(5, 'Find Nearest NGO', Icons.location_pin),
+              _buildNavItem(6, 'Logout', Icons.logout),
+              
               
               // Report button at the bottom
               const Spacer(),

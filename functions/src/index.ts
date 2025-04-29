@@ -1,6 +1,8 @@
 import * as admin from "firebase-admin";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {getDistance} from "geolib";
+import {onCall} from "firebase-functions/v2/https";
+
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -159,3 +161,20 @@ Please consider organizing a drive!`,
     return;
   }
 );
+
+export const deleteUserAccount = onCall(async (request) => {
+  const {uid} = request.data;
+
+  if (!uid) {
+    throw new Error("UID is required.");
+  }
+
+  try {
+    await admin.auth().deleteUser(uid);
+    console.log(`✅ User ${uid} deleted from Firebase Auth.`);
+    return {message: `User ${uid} deleted successfully.`};
+  } catch (error: any) {
+    console.error("❌ Error deleting user:", error);
+    throw new Error(error.message || "error occurred while deleting user.");
+  }
+});

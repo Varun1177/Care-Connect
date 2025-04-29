@@ -640,7 +640,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                     buildPasswordField(),
                     const SizedBox(height: 20),
                     buildConfirmPasswordField(),
-                    buildRememberForgotRow(),
+                    //buildRememberForgotRow(),
                     const SizedBox(height: 25),
                     buildRegisterButton(),
                     const SizedBox(height: 20),
@@ -758,55 +758,55 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget buildRememberForgotRow() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              SizedBox(
-                height: 24,
-                width: 24,
-                child: Checkbox(
-                  value: _rememberMe,
-                  activeColor: const Color(0xFF00A86B),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _rememberMe = value!;
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Remember me',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ],
-          ),
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'Forgot Password?',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color:  Color(0xFF00A86B),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget buildRememberForgotRow() {
+  //   return Padding(
+  //     padding: const EdgeInsets.only(top: 10),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //       children: [
+  //         Row(
+  //           children: [
+  //             SizedBox(
+  //               height: 24,
+  //               width: 24,
+  //               child: Checkbox(
+  //                 value: _rememberMe,
+  //                 activeColor: const Color(0xFF00A86B),
+  //                 shape: RoundedRectangleBorder(
+  //                   borderRadius: BorderRadius.circular(4),
+  //                 ),
+  //                 onChanged: (value) {
+  //                   setState(() {
+  //                     _rememberMe = value!;
+  //                   });
+  //                 },
+  //               ),
+  //             ),
+  //             const SizedBox(width: 8),
+  //             // Text(
+  //             //   'Remember me',
+  //             //   style: TextStyle(
+  //             //     fontSize: 14,
+  //             //     color: Colors.grey.shade700,
+  //             //   ),
+  //             // ),
+  //           ],
+  //         ),
+  //         // TextButton(
+  //         //   onPressed: () {},
+  //         //   child: const Text(
+  //         //     'Forgot Password?',
+  //         //     style: TextStyle(
+  //         //       fontSize: 14,
+  //         //       fontWeight: FontWeight.w600,
+  //         //       color:  Color(0xFF00A86B),
+  //         //     ),
+  //         //   ),
+  //         // ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget buildRegisterButton() {
     return SizedBox(
